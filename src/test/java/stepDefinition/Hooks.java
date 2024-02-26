@@ -19,7 +19,7 @@ public class Hooks {
 	
 	@After
 	public void afterScenario(Scenario scenario) {
-		BrowserFactory.get().context().close();
+		BrowserFactory.endTest();
 //		String screenshotName = scenario.getName().replaceAll(" ", "_");
 //		context.tracing().stop(new Tracing.StopOptions().setPath(Paths.get("target/" + screenshotName + ".zip")));
 //		context.close();

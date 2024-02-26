@@ -32,6 +32,12 @@ public class BrowserFactory {
         return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
     }
 
+    public static void endTest() {
+        get().page.close();
+        get().context.close();
+        get().page = null;
+        get().context = null;
+    }
     public static void shutdown() {
         get().browser.close();
     }
