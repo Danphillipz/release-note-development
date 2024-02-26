@@ -3,7 +3,6 @@ package playwright.managers;
 import com.microsoft.playwright.*;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -11,10 +10,10 @@ import java.util.Properties;
 
 public class BrowserFactory {
 
-    private ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>(); //For Parallel execution
-    private ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
-    private ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>(); //For Parallel execution
-    private ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>(); //For Parallel execution
+    private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>(); //For Parallel execution
+    private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
     private static BrowserFactory instance;
 
     private Properties prop;
@@ -23,6 +22,10 @@ public class BrowserFactory {
 
     public static BrowserFactory get() {
         return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
+    }
+
+    public static BrowserFactory perform() {
+        return get();
     }
 
     public Browser browser() {
@@ -47,7 +50,7 @@ public class BrowserFactory {
         return this.playwrightThreadLocal.get();
     }
 
-    public static void start() {
+    public static void startFactory() {
         if (instance != null) {
             throw new Error("Browser factory is already running");
         }
@@ -59,33 +62,30 @@ public class BrowserFactory {
     }
 
 
-    public static void endTest() {
-        get().page().close();
-        get().browserContext().close();
-        get().pageThreadLocal.set(null);
-        get().contextThreadLocal.set(null);
+    public void endTest() {
+        page().close();
+        browserContext().close();
+        pageThreadLocal.set(null);
+        contextThreadLocal.set(null);
     }
 
-    public static void shutdown() {
-        get().browser().close();
+    public void shutdown() {
+        browser().close();
     }
 
     private Browser launchBrowser(String browserName) {
         playwrightThreadLocal.set(Playwright.create());
 
-        switch (browserName.toLowerCase()) {
-            case "chromium":
-                return playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
-            case "firefox":
+        return switch (browserName.toLowerCase()) {
+            case "chromium" -> playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
+            case "firefox" ->
                 //Force headless due to issue with browser not responding
-                return playwright().firefox().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            case "safari":
-                return playwright().webkit().launch(new BrowserType.LaunchOptions().setHeadless(false));
-            case "chrome":
-                return playwright().chromium().launch(new BrowserType.LaunchOptions().setChannel("chrome").setHeadless(false));
-            default:
-                throw new NoSuchElementException("Browser unsupported");
-        }
+                    playwright().firefox().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            case "safari" -> playwright().webkit().launch(new BrowserType.LaunchOptions().setHeadless(false));
+            case "chrome" ->
+                    playwright().chromium().launch(new BrowserType.LaunchOptions().setChannel("chrome").setHeadless(false));
+            default -> throw new NoSuchElementException("Browser unsupported");
+        };
     }
 
     public Properties config() {
@@ -93,8 +93,6 @@ public class BrowserFactory {
             FileInputStream ip = new FileInputStream("./src/test/resources/config/config.properties");
             prop = new Properties();
             prop.load(ip);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
