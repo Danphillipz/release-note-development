@@ -7,28 +7,24 @@ public class Hooks {
 
 	@BeforeAll
 	public static void setup() {
-		BrowserFactory.start();
-		System.out.println("Browser is initialized");
+		BrowserFactory.startFactory();
 	}
 	
 	@Before
 	public void beforeScenario() {
-		BrowserFactory.get().page();
-		System.out.println("Browser Context is initialized");
+		BrowserFactory.perform().launchTest();
 	}
 	
 	@After
 	public void afterScenario(Scenario scenario) {
-		BrowserFactory.endTest();
+		BrowserFactory.perform().endTest();
 //		String screenshotName = scenario.getName().replaceAll(" ", "_");
 //		context.tracing().stop(new Tracing.StopOptions().setPath(Paths.get("target/" + screenshotName + ".zip")));
 //		context.close();
-		System.out.println("BrowserContext has been closed");
 	}
 	
 	@AfterAll
 	public static void tearDown() {
-		BrowserFactory.shutdown();
-		System.out.println("PlayWright has been closed");
+		BrowserFactory.perform().shutdown();
 	}
 }

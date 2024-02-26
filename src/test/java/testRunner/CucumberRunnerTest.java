@@ -1,20 +1,17 @@
 package testRunner;
 
-import io.cucumber.junit.Cucumber;
-import io.cucumber.junit.CucumberOptions;
-import org.junit.runner.RunWith;
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Cucumber.class)
-@CucumberOptions(tags = "not(@wip)", monochrome = true,
-        features = "src/test/resources/features",
-        glue = {"stepDefinition"},
-        plugin = 
-	{"pretty","junit:target/junitreport.xml","json:target/jsonreport.json","html:target/cucumber-reports.html"}
-)
+import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features")
+@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "stepDefinition")
 public class CucumberRunnerTest {
 	
-	private CucumberRunnerTest() {
-
-	}
+	private CucumberRunnerTest() {}
 }
