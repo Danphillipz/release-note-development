@@ -8,13 +8,11 @@ public class Hooks {
 	@BeforeAll
 	public static void setup() {
 		BrowserFactory.start();
-		System.out.println("Browser is initialized");
 	}
 	
 	@Before
 	public void beforeScenario() {
-		BrowserFactory.get().page();
-		System.out.println("Browser Context is initialized");
+		BrowserFactory.get().launchTest();
 	}
 	
 	@After

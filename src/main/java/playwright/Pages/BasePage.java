@@ -12,6 +12,7 @@ public class BasePage {
     private Page page;
 
     public BasePage(Page page) {
+        System.out.println("Creating base page in thread: "+Thread.currentThread() + page);
         this.page = page;
     }
 
@@ -27,6 +28,7 @@ public class BasePage {
         return navigateTo(route, null);
     }
     public Response navigateTo(String route, Page.NavigateOptions options) {
+        System.out.println("Trying to navigate to page in thread: " + Thread.currentThread());
         URI uri = URI.create(BrowserFactory.get().config().getProperty("baseURL"));
         String url = String.valueOf(uri.resolve(Optional.ofNullable(route).orElse("")));
         return this.page.navigate(url, options);

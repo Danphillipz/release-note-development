@@ -11,58 +11,78 @@ import java.util.Properties;
 
 public class BrowserFactory {
 
-    private BrowserContext context;
-    private Page page;
-    private Properties prop;
-    private Browser browser;
+    private ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>(); //For Parallel execution
+    private ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
+    private ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>(); //For Parallel execution
+    private ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
     private static BrowserFactory instance;
 
-    private BrowserFactory(String browser) {
-        this.browser = launchBrowser(browser);
+    private Properties prop;
+
+    private BrowserFactory() {}
+
+    public static BrowserFactory get() {
+        return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
+    }
+
+    public Browser browser() {
+        return this.browserThreadLocal.get();
+    }
+
+    public BrowserContext browserContext() {
+        if (this.contextThreadLocal.get() == null) {
+            this.contextThreadLocal.set(browser().newContext());
+        }
+        return this.contextThreadLocal.get();
+    }
+
+    public Page page() {
+        if (this.pageThreadLocal.get() == null) {
+            this.pageThreadLocal.set(browserContext().newPage());
+        }
+        return this.pageThreadLocal.get();
+    }
+
+    public Playwright playwright() {
+        return this.playwrightThreadLocal.get();
     }
 
     public static void start() {
         if (instance != null) {
             throw new Error("Browser factory is already running");
         }
-        instance = new BrowserFactory("chrome");
+        instance = new BrowserFactory();
     }
 
-    public static BrowserFactory get() {
-        return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
+    public void launchTest() {
+        browserThreadLocal.set(launchBrowser("chrome"));
     }
+
 
     public static void endTest() {
-        get().page.close();
-        get().context.close();
-        get().page = null;
-        get().context = null;
+        get().page().close();
+        get().browserContext().close();
+        get().pageThreadLocal.set(null);
+        get().contextThreadLocal.set(null);
     }
+
     public static void shutdown() {
-        get().browser.close();
-    }
-
-    public BrowserContext context() {
-        return context != null ? context : (context = browser.newContext());
-    }
-
-    public Page page() {
-        return page != null ? page : (page = context().newPage());
+        get().browser().close();
     }
 
     private Browser launchBrowser(String browserName) {
-        Playwright playwright = Playwright.create();
+        playwrightThreadLocal.set(Playwright.create());
 
         switch (browserName.toLowerCase()) {
             case "chromium":
-                return playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
+                return playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
             case "firefox":
                 //Force headless due to issue with browser not responding
-                return playwright.firefox().launch(new BrowserType.LaunchOptions().setHeadless(true));
+                return playwright().firefox().launch(new BrowserType.LaunchOptions().setHeadless(true));
             case "safari":
-                return playwright.webkit().launch(new BrowserType.LaunchOptions().setHeadless(false));
+                return playwright().webkit().launch(new BrowserType.LaunchOptions().setHeadless(false));
             case "chrome":
-                return playwright.chromium().launch(new BrowserType.LaunchOptions().setChannel("chrome").setHeadless(false));
+                return playwright().chromium().launch(new BrowserType.LaunchOptions().setChannel("chrome").setHeadless(false));
             default:
                 throw new NoSuchElementException("Browser unsupported");
         }
