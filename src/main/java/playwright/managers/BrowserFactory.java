@@ -10,15 +10,23 @@ import java.util.Properties;
 
 public class BrowserFactory {
 
-    private final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>(); //For Parallel execution
+    private final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
-    private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>(); //For Parallel execution
+    private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
     private static BrowserFactory instance;
 
-    private Properties prop;
+    private Properties browserProperties;
 
-    private BrowserFactory() {}
+    private BrowserFactory() {
+        try {
+            FileInputStream ip = new FileInputStream("./src/test/resources/config/browser.config.properties");
+            browserProperties = new Properties();
+            browserProperties.load(ip);
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+    }
 
     public static BrowserFactory get() {
         return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
@@ -58,7 +66,7 @@ public class BrowserFactory {
     }
 
     public void launchTest() {
-        browserThreadLocal.set(launchBrowser("chrome"));
+        launchBrowser(String.valueOf(getConfiguration("browser")).toLowerCase());
     }
 
 
@@ -73,29 +81,27 @@ public class BrowserFactory {
         browser().close();
     }
 
-    private Browser launchBrowser(String browserName) {
+    private void launchBrowser(String browser) {
+        boolean headless = getFlag("headless");
         playwrightThreadLocal.set(Playwright.create());
-
-        return switch (browserName.toLowerCase()) {
-            case "chromium" -> playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
+        browserThreadLocal.set(switch (browser) {
+            case "chromium" -> playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(headless));
             case "firefox" ->
                 //Force headless due to issue with browser not responding
                     playwright().firefox().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            case "safari" -> playwright().webkit().launch(new BrowserType.LaunchOptions().setHeadless(false));
+            case "safari" -> playwright().webkit().launch(new BrowserType.LaunchOptions().setHeadless(headless));
             case "chrome" ->
-                    playwright().chromium().launch(new BrowserType.LaunchOptions().setChannel("chrome").setHeadless(false));
-            default -> throw new NoSuchElementException("Browser unsupported");
-        };
+                    playwright().chromium().launch(new BrowserType.LaunchOptions().setChannel("chrome").setHeadless(headless));
+            default -> throw new NoSuchElementException(String.format("%s Browser unsupported", browser));
+        });
     }
 
-    public Properties config() {
-        try {
-            FileInputStream ip = new FileInputStream("./src/test/resources/config/config.properties");
-            prop = new Properties();
-            prop.load(ip);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return prop;
+    public Object getConfiguration(String property) {
+        return Optional.ofNullable(browserProperties.get(property)).orElseThrow(() -> new NoSuchFieldError(String.format("No browser configuration value found for %s", property)));
     }
+
+    public boolean getFlag(String property) {
+        return Boolean.parseBoolean(String.valueOf(getConfiguration(property)));
+    }
+
 }

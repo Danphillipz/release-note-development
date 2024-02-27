@@ -27,7 +27,7 @@ public class BasePage {
         return navigateTo(route, null);
     }
     public Response navigateTo(String route, Page.NavigateOptions options) {
-        URI uri = URI.create(BrowserFactory.get().config().getProperty("baseURL"));
+        URI uri = URI.create(String.valueOf(BrowserFactory.get().getConfiguration("baseURL")));
         String url = String.valueOf(uri.resolve(Optional.ofNullable(route).orElse("")));
         return this.page.navigate(url, options);
     }
