@@ -2,11 +2,8 @@ package playwright.managers;
 
 import com.microsoft.playwright.*;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Properties;
 
 public class BrowserFactory {
 
@@ -16,17 +13,7 @@ public class BrowserFactory {
     private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
     private static BrowserFactory instance;
 
-    private Properties browserProperties;
-
-    private BrowserFactory() {
-        try {
-            FileInputStream ip = new FileInputStream("./src/test/resources/config/browser.config.properties");
-            browserProperties = new Properties();
-            browserProperties.load(ip);
-        } catch (IOException e) {
-            throw new Error(e);
-        }
-    }
+    private BrowserFactory() {}
 
     public static BrowserFactory get() {
         return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
@@ -42,7 +29,16 @@ public class BrowserFactory {
 
     public BrowserContext browserContext() {
         if (this.contextThreadLocal.get() == null) {
-            this.contextThreadLocal.set(browser().newContext());
+            BrowserContext context = browser().newContext();
+            var timeout = ConfigurationManager.get().configuration().integer("timeout");
+            var navigationTimeout = ConfigurationManager.get().configuration().integer("navigationTimeout");
+            if(timeout != null) {
+                context.setDefaultTimeout(timeout);
+            }
+            if(navigationTimeout != null) {
+                context.setDefaultNavigationTimeout(navigationTimeout);
+            }
+            this.contextThreadLocal.set(context);
         }
         return this.contextThreadLocal.get();
     }
@@ -66,7 +62,7 @@ public class BrowserFactory {
     }
 
     public void launchTest() {
-        launchBrowser(String.valueOf(getConfiguration("browser")).toLowerCase());
+        launchBrowser(ConfigurationManager.get().configuration().strictString("browser"));
     }
 
 
@@ -82,9 +78,9 @@ public class BrowserFactory {
     }
 
     private void launchBrowser(String browser) {
-        boolean headless = getFlag("headless");
+        boolean headless = ConfigurationManager.get().configuration().flag("headless", true);
         playwrightThreadLocal.set(Playwright.create());
-        browserThreadLocal.set(switch (browser) {
+        browserThreadLocal.set(switch (browser.toLowerCase()) {
             case "chromium" -> playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(headless));
             case "firefox" ->
                 //Force headless due to issue with browser not responding
@@ -95,13 +91,4 @@ public class BrowserFactory {
             default -> throw new NoSuchElementException(String.format("%s Browser unsupported", browser));
         });
     }
-
-    public Object getConfiguration(String property) {
-        return Optional.ofNullable(browserProperties.get(property)).orElseThrow(() -> new NoSuchFieldError(String.format("No browser configuration value found for %s", property)));
-    }
-
-    public boolean getFlag(String property) {
-        return Boolean.parseBoolean(String.valueOf(getConfiguration(property)));
-    }
-
 }

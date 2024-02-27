@@ -3,6 +3,7 @@ package playwright.Pages;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
 import playwright.managers.BrowserFactory;
+import playwright.managers.ConfigurationManager;
 
 import java.net.URI;
 import java.util.Optional;
@@ -27,7 +28,7 @@ public class BasePage {
         return navigateTo(route, null);
     }
     public Response navigateTo(String route, Page.NavigateOptions options) {
-        URI uri = URI.create(String.valueOf(BrowserFactory.get().getConfiguration("baseURL")));
+        URI uri = URI.create(ConfigurationManager.get().environment().string("baseURL"));
         String url = String.valueOf(uri.resolve(Optional.ofNullable(route).orElse("")));
         return this.page.navigate(url, options);
     }
