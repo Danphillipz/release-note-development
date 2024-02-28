@@ -61,13 +61,14 @@ To automatically rerun any failed tests as part of the build you can set `rerunF
 the `pom.xml`
 
 ```xml
+
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-surefire-plugin</artifactId>
     <version>${maven.surefire.version}</version>
     <configuration>
         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-            <!-->OTHER CONFIGURATION<-->
+        <!-->OTHER CONFIGURATION<-->
     </configuration>
 </plugin>
 ```
@@ -94,6 +95,8 @@ In this file you can define the following configuration:
 - `navigationTimeout`:
   Calls [setDefaultNavigationTimeout](https://playwright.dev/java/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout)
   for at the browser context level
+- `assertionTimeout`: Changes default timeout for Playwright assertions from 5 seconds to the specified value by
+  calling [setDefaultAssertionTimeout](https://playwright.dev/java/docs/api/class-playwrightassertions#playwright-assertions-set-default-assertion-timeout)
 - `trace`: Enables tracing for failed tests. See [trace files](#playwright-trace-files)
 
 ### Environment files

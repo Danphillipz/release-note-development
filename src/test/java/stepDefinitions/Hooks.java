@@ -1,8 +1,8 @@
-package stepDefinition;
+package stepDefinitions;
 
 import com.microsoft.playwright.Tracing;
 import io.cucumber.java.*;
-import playwright.managers.BrowserFactory;
+import playwright.managers.PlaywrightManager;
 import playwright.managers.ConfigurationManager;
 
 import java.nio.file.Path;
@@ -13,17 +13,17 @@ public class Hooks {
 
     @BeforeAll
     public static void setup() {
-        BrowserFactory.startFactory();
+        PlaywrightManager.startPlaywright();
     }
 
     @AfterAll
     public static void tearDown() {
-        BrowserFactory.perform().shutdown();
+        PlaywrightManager.perform().shutdown();
     }
 
     @Before
     public void beforeScenario() {
-        BrowserFactory.perform().launchTest();
+        PlaywrightManager.perform().launchTest();
     }
 
     @After
@@ -33,10 +33,10 @@ public class Hooks {
             if (ConfigurationManager.get().configuration().asFlag("trace", false)) {
                 attachTrace(scenario, name);
             }
-            byte[] screenshot = BrowserFactory.get().page().screenshot();
+            byte[] screenshot = PlaywrightManager.get().page().screenshot();
             scenario.attach(screenshot, "image/png", String.format("%s-failure-screenshot", name));
         }
-        BrowserFactory.perform().endTest();
+        PlaywrightManager.perform().endTest();
     }
 
     private void attachTrace(Scenario scenario, String name) {
@@ -47,6 +47,6 @@ public class Hooks {
                 Paths.get("target").relativize(trace)
         );
         scenario.attach(linkHtml.getBytes(), "text/html", "Trace File");
-        BrowserFactory.get().browserContext().tracing().stop(new Tracing.StopOptions().setPath(trace));
+        PlaywrightManager.get().browserContext().tracing().stop(new Tracing.StopOptions().setPath(trace));
     }
 }

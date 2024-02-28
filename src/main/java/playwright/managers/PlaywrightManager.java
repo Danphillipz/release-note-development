@@ -1,31 +1,32 @@
 package playwright.managers;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-public class BrowserFactory {
+public class PlaywrightManager {
 
-    private static BrowserFactory instance;
+    private static PlaywrightManager instance;
     private final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
 
-    private BrowserFactory() {
+    private PlaywrightManager() {
     }
 
-    public static BrowserFactory get() {
+    public static PlaywrightManager get() {
         return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
     }
 
-    public static BrowserFactory perform() {
+    public static PlaywrightManager perform() {
         return get();
     }
 
-    public static void startFactory() {
-        instance = new BrowserFactory();
+    public static void startPlaywright() {
+        instance = new PlaywrightManager();
     }
 
     public Browser browser() {
@@ -35,7 +36,7 @@ public class BrowserFactory {
     public BrowserContext browserContext() {
         if (this.contextThreadLocal.get() == null) {
             BrowserContext context = browser().newContext();
-            this.contextThreadLocal.set(configureContext(context));
+            this.contextThreadLocal.set(configureTest(context));
         }
         return this.contextThreadLocal.get();
     }
@@ -50,19 +51,16 @@ public class BrowserFactory {
      * @param context - The context to be configured
      * @return the configured context
      */
-    private BrowserContext configureContext(BrowserContext context) {
-        var timeout = ConfigurationManager.get().configuration().asInteger("timeout");
-        var navigationTimeout = ConfigurationManager.get().configuration().asInteger("navigationTimeout");
-        if (timeout != null) {
-            context.setDefaultTimeout(timeout);
-        }
-        if (navigationTimeout != null) {
-            context.setDefaultNavigationTimeout(navigationTimeout);
-        }
-        if (ConfigurationManager.get().configuration().asFlag("trace", false)) {
-            context.tracing().start(new Tracing.StartOptions()
-                    .setScreenshots(true)
-                    .setSnapshots(true));
+    private BrowserContext configureTest(BrowserContext context) {
+        var getProperty = ConfigurationManager.get().configuration();
+        var timeout = getProperty.asInteger("timeout");
+        var navigationTimeout = getProperty.asInteger("navigationTimeout");
+        var assertionTimeout = getProperty.asInteger("assertionTimeout");
+        if (timeout != null) context.setDefaultTimeout(timeout);
+        if (navigationTimeout != null) context.setDefaultNavigationTimeout(navigationTimeout);
+        if (assertionTimeout != null) PlaywrightAssertions.setDefaultAssertionTimeout(assertionTimeout);
+        if (getProperty.asFlag("trace", false)) {
+            context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true));
         }
         return context;
     }
