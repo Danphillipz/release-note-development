@@ -1,4 +1,4 @@
-# Playwright-Java-poc
+# Playwright Java Test Framework Template
 
 # TODO
 
@@ -12,9 +12,7 @@
 - [X] Set up trace files
 - [X] Set up evidence system
 - [X] Set up HTML reports
-- [ ] Mechanism for handling multiple context and pages per context
 - [ ] Javadoc everything
-- [ ] (GitHub matrix can then instruct on browsers to run) - Maybe?
 - [ ] Document junit-platform
 
 ## Get started

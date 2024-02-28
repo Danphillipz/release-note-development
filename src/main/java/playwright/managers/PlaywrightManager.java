@@ -13,6 +13,7 @@ public class PlaywrightManager {
     private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
+    private ConfigurationManager.PropertyHandler getProperty = ConfigurationManager.get().configuration();
 
     private PlaywrightManager() {
     }
@@ -52,12 +53,11 @@ public class PlaywrightManager {
      * @return the configured context
      */
     private BrowserContext configureTest(BrowserContext context) {
-        var getProperty = ConfigurationManager.get().configuration();
         var timeout = getProperty.asInteger("timeout");
-        var navigationTimeout = getProperty.asInteger("navigationTimeout");
-        var assertionTimeout = getProperty.asInteger("assertionTimeout");
         if (timeout != null) context.setDefaultTimeout(timeout);
+        var navigationTimeout = getProperty.asInteger("navigationTimeout");
         if (navigationTimeout != null) context.setDefaultNavigationTimeout(navigationTimeout);
+        var assertionTimeout = getProperty.asInteger("assertionTimeout");
         if (assertionTimeout != null) PlaywrightAssertions.setDefaultAssertionTimeout(assertionTimeout);
         if (getProperty.asFlag("trace", false)) {
             context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true));
@@ -77,7 +77,7 @@ public class PlaywrightManager {
     }
 
     public void launchTest() {
-        launchBrowser(ConfigurationManager.get().configuration().asRequiredString("browser"));
+        launchBrowser(getProperty.asRequiredString("browser"));
     }
 
 
@@ -93,16 +93,15 @@ public class PlaywrightManager {
     }
 
     private void launchBrowser(String browser) {
-        boolean headless = ConfigurationManager.get().configuration().asFlag("headless", true);
         playwrightThreadLocal.set(Playwright.create());
+        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions().setHeadless(
+                getProperty.asFlag("headless", true));
         browserThreadLocal.set(switch (browser.toLowerCase()) {
-            case "chromium" -> playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(headless));
-            case "firefox" ->
-                //Force headless due to issue with browser not responding
-                    playwright().firefox().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            case "safari" -> playwright().webkit().launch(new BrowserType.LaunchOptions().setHeadless(headless));
-            case "chrome" ->
-                    playwright().chromium().launch(new BrowserType.LaunchOptions().setChannel("chrome").setHeadless(headless));
+            case "chromium" -> playwright().chromium().launch(options);
+            case "firefox" -> playwright().firefox().launch(options);
+            case "safari" -> playwright().webkit().launch(options);
+            case "chrome" -> playwright().chromium().launch(options.setChannel("chrome"));
+            case "edge" -> playwright().chromium().launch(options.setChannel("msedge"));
             default -> throw new NoSuchElementException(String.format("%s Browser unsupported", browser));
         });
     }
