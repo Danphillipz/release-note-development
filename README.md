@@ -9,13 +9,13 @@
 - [ ] Mobile emulation system from deviceDescriptors
 - [ ] Mechanism to rerun tests automatically upon failure based upon a configuration
 - [ X ] Come up with a CLI run option (with params for env, browsers etc)
-- [ ] Set up trace files
-- [ ] Set up evidence system
-- [ ] Mechanism for linting
-- [ ] Mechanism for auto formatting
+- [ X ] Set up trace files
+- [ X ] Set up evidence system
+- [ X ] Set up HTML reports
 - [ ] Mechanism for handling multiple context and pages per context
 - [ ] Javadoc everything
 - [ ] (GitHub matrix can then instruct on browsers to run) - Maybe?
+- [ ] Document junit-platform
 
 ## Test Tags
 
@@ -58,6 +58,7 @@ The configuration for test execution can be set in `src/test/resources/config/co
 In this file you can define the following configuration:
 
 - `browser`: Which browser to run tests against
+- `headless`: Whether to run the browser headless
 - `environment`: Which environment the test framework should point to (this maps to the corresponding `X.env.properties`
   file)
 - `timeout`:
@@ -66,6 +67,7 @@ In this file you can define the following configuration:
 - `navigationTimeout`:
   Calls [setDefaultNavigationTimeout](https://playwright.dev/java/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout)
   for at the browser context level
+- `trace`: Enables tracing for failed tests. See [trace files](#todo)
 
 ### Environment files
 
@@ -87,5 +89,33 @@ You can override any of the configuration file values through the corresponding 
 For example, to run all tests on `webkit` in `headless` mode you could run the following
 
 ```shell
-mvn test -Dbrowser=safari -Dheadless=false
+mvn verify -Dbrowser=safari -Dheadless=false
 ```
+
+## Test Reporting
+
+Test results will be output to the console post completion. Additionally, we can generate HTML reports, capture trace
+files and view automatically captured screenshots upon failure.
+
+### HTML Reports
+
+Cucumber has been configured to capture all test results so that we can generate HTML reports.
+HTML reports are generated using [Cluecumber Maven](https://github.com/trivago/cluecumber/tree/main/maven) and can be
+generated via the following command:
+
+```shell
+mvn cluecumber:reporting
+```
+
+### Playwright Trace Files
+
+To capture playwright trace files you must set the following value in the [test configuration file](#test-configuration)
+.
+
+```properties
+trace=true
+```
+
+Upon test failure this will save a trace file to `target/trace/[scenario-name][UUID].zip`. These can easily be found for
+any failed tests by generating and viewing the HTML report. A link to the trace file has been embedded to the report in
+the `After Hooks` sections.

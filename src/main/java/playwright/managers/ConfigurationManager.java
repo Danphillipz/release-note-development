@@ -8,11 +8,11 @@ import java.util.Properties;
 public class ConfigurationManager {
 
     private static ConfigurationManager instance;
-    private PropertyHandler environment, configuration;
+    private PropertyHandler environment;
+    private final PropertyHandler configuration;
 
     private ConfigurationManager() {
         configuration = new PropertyHandler("./src/test/resources/config/configuration.properties");
-        environment = new PropertyHandler(String.format("./src/test/resources/config/%s.env.properties", configuration.strictString("environment")));
     }
 
     public static ConfigurationManager get() {
@@ -20,7 +20,10 @@ public class ConfigurationManager {
     }
 
     public PropertyHandler environment() {
-        return environment;
+        return environment == null ? environment = new PropertyHandler(
+                String.format("./src/test/resources/config/%s.env.properties",
+                        configuration.asRequiredString("environment")))
+                : environment;
     }
 
     public PropertyHandler configuration() {
@@ -29,7 +32,7 @@ public class ConfigurationManager {
 
 
     public class PropertyHandler {
-        private Properties properties;
+        private final Properties properties;
 
         public PropertyHandler(String path) {
             try {
@@ -50,42 +53,42 @@ public class ConfigurationManager {
 
         }
 
-        public Boolean flag(String property) {
+        public Boolean asFlag(String property) {
             var configurationValue = getConfiguration(property, false);
             return configurationValue == null ? null : Boolean.parseBoolean(String.valueOf(configurationValue));
         }
 
-        public boolean flag(String property, boolean defaultValue) {
-            return Optional.ofNullable(flag(property)).orElse(defaultValue);
+        public boolean asFlag(String property, boolean defaultValue) {
+            return Optional.ofNullable(asFlag(property)).orElse(defaultValue);
         }
 
-        public boolean strictFlag(String property) throws NoSuchFieldError {
+        public boolean asRequiredFlag(String property) throws NoSuchFieldError {
             return Boolean.parseBoolean(String.valueOf(getConfiguration(property, true)));
         }
 
-        public String string(String property) {
+        public String asString(String property) {
             var configurationValue = getConfiguration(property, false);
             return configurationValue == null ? null : String.valueOf(configurationValue);
         }
 
-        public String string(String property, String defaultValue) {
-            return Optional.ofNullable(string(property)).orElse(defaultValue);
+        public String asString(String property, String defaultValue) {
+            return Optional.ofNullable(asString(property)).orElse(defaultValue);
         }
 
-        public String strictString(String property) throws NoSuchFieldError {
+        public String asRequiredString(String property) throws NoSuchFieldError {
             return String.valueOf(getConfiguration(property, true));
         }
 
-        public Integer integer(String property) {
+        public Integer asInteger(String property) {
             var configurationValue = getConfiguration(property, false);
             return configurationValue == null ? null : Integer.valueOf(String.valueOf(configurationValue));
         }
 
-        public Integer integer(String property, Integer defaultValue) {
-            return Optional.ofNullable(integer(property)).orElse(defaultValue);
+        public Integer asInteger(String property, Integer defaultValue) {
+            return Optional.ofNullable(asInteger(property)).orElse(defaultValue);
         }
 
-        public Integer strictInteger(String property) throws NoSuchFieldError {
+        public Integer asRequiredInteger(String property) throws NoSuchFieldError {
             return Integer.valueOf(String.valueOf(getConfiguration(property, true)));
         }
 

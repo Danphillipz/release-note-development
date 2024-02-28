@@ -30,17 +30,35 @@ public class BrowserFactory {
     public BrowserContext browserContext() {
         if (this.contextThreadLocal.get() == null) {
             BrowserContext context = browser().newContext();
-            var timeout = ConfigurationManager.get().configuration().integer("timeout");
-            var navigationTimeout = ConfigurationManager.get().configuration().integer("navigationTimeout");
-            if(timeout != null) {
-                context.setDefaultTimeout(timeout);
-            }
-            if(navigationTimeout != null) {
-                context.setDefaultNavigationTimeout(navigationTimeout);
-            }
-            this.contextThreadLocal.set(context);
+            this.contextThreadLocal.set(configureContext(context));
         }
         return this.contextThreadLocal.get();
+    }
+
+    /**
+     * Configures the browser context with user defined configurations
+     * The following properties are pulled from the browser configuration
+     * - timeout - Default timeout
+     * - navigationTimeout - Timeout for browser navigations
+     * - trace - Whether to enable tracing for failed tests
+     * @param context - The context to be configured
+     * @return the configured context
+     */
+    private BrowserContext configureContext(BrowserContext context) {
+        var timeout = ConfigurationManager.get().configuration().asInteger("timeout");
+        var navigationTimeout = ConfigurationManager.get().configuration().asInteger("navigationTimeout");
+        if(timeout != null) {
+            context.setDefaultTimeout(timeout);
+        }
+        if(navigationTimeout != null) {
+            context.setDefaultNavigationTimeout(navigationTimeout);
+        }
+        if(ConfigurationManager.get().configuration().asFlag("trace", false)){
+            context.tracing().start(new Tracing.StartOptions()
+                    .setScreenshots(true)
+                    .setSnapshots(true));
+        }
+        return context;
     }
 
     public Page page() {
@@ -62,7 +80,7 @@ public class BrowserFactory {
     }
 
     public void launchTest() {
-        launchBrowser(ConfigurationManager.get().configuration().strictString("browser"));
+        launchBrowser(ConfigurationManager.get().configuration().asRequiredString("browser"));
     }
 
 
@@ -78,7 +96,7 @@ public class BrowserFactory {
     }
 
     private void launchBrowser(String browser) {
-        boolean headless = ConfigurationManager.get().configuration().flag("headless", true);
+        boolean headless = ConfigurationManager.get().configuration().asFlag("headless", true);
         playwrightThreadLocal.set(Playwright.create());
         browserThreadLocal.set(switch (browser.toLowerCase()) {
             case "chromium" -> playwright().chromium().launch(new BrowserType.LaunchOptions().setHeadless(headless));
