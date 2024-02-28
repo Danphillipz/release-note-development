@@ -2,11 +2,8 @@ package playwright.Pages;
 
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import playwright.managers.BrowserFactory;
 
-import java.util.Properties;
-
-public class HomePage extends BasePage{
+public class HomePage extends BasePage {
 
     private final String searchBox = "//*[@id='header-big-screen-search-box']";
 
@@ -17,14 +14,14 @@ public class HomePage extends BasePage{
     public void clearPopUp() {
         page().getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Accept All Cookies")).click();
     }
-    public void performSearch(String searchTerm)
-    {
+
+    public void performSearch(String searchTerm) {
         page().fill(searchBox, searchTerm);
         String searchBoxSubmit = "#header-search-form > button";
         page().click(searchBoxSubmit);
     }
-    public String getResultHeader()
-    {
+
+    public String getResultHeader() {
         String val = page().getByTestId("plp-product-title-text").textContent();
         val = val.replace("\"", "");
         return val;

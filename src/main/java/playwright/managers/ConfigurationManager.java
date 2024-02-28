@@ -8,8 +8,8 @@ import java.util.Properties;
 public class ConfigurationManager {
 
     private static ConfigurationManager instance;
-    private PropertyHandler environment;
     private final PropertyHandler configuration;
+    private PropertyHandler environment;
 
     private ConfigurationManager() {
         configuration = new PropertyHandler("./src/test/resources/config/configuration.properties");

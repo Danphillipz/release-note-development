@@ -7,13 +7,14 @@ import java.util.Optional;
 
 public class BrowserFactory {
 
+    private static BrowserFactory instance;
     private final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
-    private static BrowserFactory instance;
 
-    private BrowserFactory() {}
+    private BrowserFactory() {
+    }
 
     public static BrowserFactory get() {
         return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
@@ -21,6 +22,10 @@ public class BrowserFactory {
 
     public static BrowserFactory perform() {
         return get();
+    }
+
+    public static void startFactory() {
+        instance = new BrowserFactory();
     }
 
     public Browser browser() {
@@ -41,19 +46,20 @@ public class BrowserFactory {
      * - timeout - Default timeout
      * - navigationTimeout - Timeout for browser navigations
      * - trace - Whether to enable tracing for failed tests
+     *
      * @param context - The context to be configured
      * @return the configured context
      */
     private BrowserContext configureContext(BrowserContext context) {
         var timeout = ConfigurationManager.get().configuration().asInteger("timeout");
         var navigationTimeout = ConfigurationManager.get().configuration().asInteger("navigationTimeout");
-        if(timeout != null) {
+        if (timeout != null) {
             context.setDefaultTimeout(timeout);
         }
-        if(navigationTimeout != null) {
+        if (navigationTimeout != null) {
             context.setDefaultNavigationTimeout(navigationTimeout);
         }
-        if(ConfigurationManager.get().configuration().asFlag("trace", false)){
+        if (ConfigurationManager.get().configuration().asFlag("trace", false)) {
             context.tracing().start(new Tracing.StartOptions()
                     .setScreenshots(true)
                     .setSnapshots(true));
@@ -70,13 +76,6 @@ public class BrowserFactory {
 
     public Playwright playwright() {
         return this.playwrightThreadLocal.get();
-    }
-
-    public static void startFactory() {
-        if (instance != null) {
-            throw new Error("Browser factory is already running");
-        }
-        instance = new BrowserFactory();
     }
 
     public void launchTest() {

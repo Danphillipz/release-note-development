@@ -2,22 +2,28 @@
 
 # TODO
 
-- [ X ] Mechanism to run tests single threaded (via CLI and in IDE)
-- [ X ] Parallel test execution
-- [ X ] Mechanism to switch environments
-- [ X ] Mechanism to switch browsers (And set up mobile emulation maybe?)
+- [X] Mechanism to run tests single threaded (via CLI and in IDE)
+- [X] Parallel test execution
+- [X] Mechanism to switch environments
+- [X] Mechanism to switch browsers (And set up mobile emulation maybe?)
 - [ ] Mobile emulation system from deviceDescriptors
-- [ ] Mechanism to rerun tests automatically upon failure based upon a configuration
-- [ X ] Come up with a CLI run option (with params for env, browsers etc)
-- [ X ] Set up trace files
-- [ X ] Set up evidence system
-- [ X ] Set up HTML reports
+- [X] Mechanism to rerun tests automatically upon failure
+- [X] Come up with a CLI run option (with params for env, browsers etc.)
+- [X] Set up trace files
+- [X] Set up evidence system
+- [X] Set up HTML reports
 - [ ] Mechanism for handling multiple context and pages per context
 - [ ] Javadoc everything
 - [ ] (GitHub matrix can then instruct on browsers to run) - Maybe?
 - [ ] Document junit-platform
 
-## Test Tags
+## Get started
+
+### Overview
+
+## Running Tests
+
+### Test Tags
 
 Cucumber tags are mapped to JUnit tags. Note that the `@` symbol is not part of
 the JUnit tag. So the scenarios below are tagged with `Smoke` and `Sanity`.
@@ -49,6 +55,27 @@ For more information on how to select tags, see the relevant documentation:
 * [JUnit 5 Suite: @Include Tags](https://junit.org/junit5/docs/current/api/org.junit.platform.suite.api/org/junit/platform/suite/api/IncludeTags.html)
 * [JUnit 5 Suite: @Exclude Tags](https://junit.org/junit5/docs/current/api/org.junit.platform.suite.api/org/junit/platform/suite/api/ExcludeTags.html)
 
+### Test Retries
+
+To automatically rerun any failed tests as part of the build you can set `rerunFailingTestsCount` property in
+the `pom.xml`
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>${maven.surefire.version}</version>
+    <configuration>
+        <rerunFailingTestsCount>2</rerunFailingTestsCount>
+            <!-->OTHER CONFIGURATION<-->
+    </configuration>
+</plugin>
+```
+
+> [!CAUTION]
+> When this setting is enabled the test runner will overwrite the `cucumber.json` report, consequently any HTML reports
+> generated via [cucable](#html-reports) will only ever contain information pertaining to the latest rerun.
+
 ## Test Configuration
 
 ### Configuration file
@@ -67,7 +94,7 @@ In this file you can define the following configuration:
 - `navigationTimeout`:
   Calls [setDefaultNavigationTimeout](https://playwright.dev/java/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout)
   for at the browser context level
-- `trace`: Enables tracing for failed tests. See [trace files](#todo)
+- `trace`: Enables tracing for failed tests. See [trace files](#playwright-trace-files)
 
 ### Environment files
 
@@ -100,7 +127,7 @@ files and view automatically captured screenshots upon failure.
 ### HTML Reports
 
 Cucumber has been configured to capture all test results so that we can generate HTML reports.
-HTML reports are generated using [Cluecumber Maven](https://github.com/trivago/cluecumber/tree/main/maven) and can be
+HTML reports are generated using [cluecumber Maven](https://github.com/trivago/cluecumber/tree/main/maven) and can be
 generated via the following command:
 
 ```shell
@@ -119,3 +146,5 @@ trace=true
 Upon test failure this will save a trace file to `target/trace/[scenario-name][UUID].zip`. These can easily be found for
 any failed tests by generating and viewing the HTML report. A link to the trace file has been embedded to the report in
 the `After Hooks` sections.
+
+

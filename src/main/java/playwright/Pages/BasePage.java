@@ -26,6 +26,7 @@ public class BasePage {
     public Response navigateTo(String route) {
         return navigateTo(route, null);
     }
+
     public Response navigateTo(String route, Page.NavigateOptions options) {
         URI uri = URI.create(ConfigurationManager.get().environment().asString("baseURL"));
         String url = String.valueOf(uri.resolve(Optional.ofNullable(route).orElse("")));
