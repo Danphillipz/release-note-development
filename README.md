@@ -6,7 +6,7 @@
 - [X] Parallel test execution
 - [X] Mechanism to switch environments
 - [X] Mechanism to switch browsers (And set up mobile emulation maybe?)
-- [ ] Mobile emulation system from deviceDescriptors
+- [X] Mobile emulation system from deviceDescriptors
 - [X] Mechanism to rerun tests automatically upon failure
 - [X] Come up with a CLI run option (with params for env, browsers etc.)
 - [X] Set up trace files
@@ -21,6 +21,29 @@
 
 ## Running Tests
 
+### Supported Browsers
+
+A number of browsers are supported by this test framework, including the ability to emulate mobile devices.
+
+To set the browser you can update the following property in the test configuration file (see [test configuration](#configuration-file):
+```properties
+browser=chromium | firefox | webkit | chrome | edge
+```
+
+A list of supported mobile device confugrations are defined in the [deviceDescriptors](./src/main/java/devices/deviceDescriptors.json) file.
+This list has been copied from the official playwright [device descriptors source](https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/deviceDescriptorsSource.json).
+
+To add a new device, simply update this json file with the relevant configuration details.
+
+You can test against an emulated device in the exact same way as you would set a browser, for example:
+```properties
+browser=Galaxy S9+ | iPhone 8 | iPhone 13 Pro landscape
+```
+
+> [!TIP]
+> When writing tests which are intended to run on both desktop and mobile devices you may need to know what type of device you are testing on. 
+> This can be determined through the `PlaywrightManager` with the following function call: `PlaywrightManager.get().isMobile()`
+> 
 ### Test Tags
 
 Cucumber tags are mapped to JUnit tags. Note that the `@` symbol is not part of

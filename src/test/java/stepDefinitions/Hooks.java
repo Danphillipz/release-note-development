@@ -36,6 +36,7 @@ public class Hooks {
             byte[] screenshot = PlaywrightManager.get().page().screenshot();
             scenario.attach(screenshot, "image/png", String.format("%s-failure-screenshot", name));
         }
+
         PlaywrightManager.perform().endTest();
     }
 

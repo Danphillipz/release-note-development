@@ -36,9 +36,8 @@ public class ConfigurationManager {
 
         public PropertyHandler(String path) {
             try {
-                FileInputStream ip = new FileInputStream(path);
                 properties = new Properties();
-                properties.load(ip);
+                properties.load(new FileInputStream(path));
             } catch (IOException e) {
                 throw new Error(e);
             }

@@ -1,8 +1,16 @@
 package playwright.managers;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
+import devices.Device;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -14,6 +22,8 @@ public class PlaywrightManager {
     private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
     private ConfigurationManager.PropertyHandler getProperty = ConfigurationManager.get().configuration();
+
+    private Device device;
 
     private PlaywrightManager() {
     }
@@ -34,10 +44,13 @@ public class PlaywrightManager {
         return this.browserThreadLocal.get();
     }
 
+    public boolean isMobile() {
+        return device == null ? false : device.isMobile();
+    }
+
     public BrowserContext browserContext() {
         if (this.contextThreadLocal.get() == null) {
-            BrowserContext context = browser().newContext();
-            this.contextThreadLocal.set(configureTest(context));
+            setContextThreadLocal(browser().newContext(new Browser.NewContextOptions().setStorageStatePath(Paths.get("./src/test/resources/state.json"))));
         }
         return this.contextThreadLocal.get();
     }
@@ -50,9 +63,8 @@ public class PlaywrightManager {
      * - trace - Whether to enable tracing for failed tests
      *
      * @param context - The context to be configured
-     * @return the configured context
      */
-    private BrowserContext configureTest(BrowserContext context) {
+    private void setContextThreadLocal(BrowserContext context) {
         var timeout = getProperty.asInteger("timeout");
         if (timeout != null) context.setDefaultTimeout(timeout);
         var navigationTimeout = getProperty.asInteger("navigationTimeout");
@@ -62,7 +74,7 @@ public class PlaywrightManager {
         if (getProperty.asFlag("trace", false)) {
             context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true));
         }
-        return context;
+        this.contextThreadLocal.set(context);
     }
 
     public Page page() {
@@ -94,15 +106,45 @@ public class PlaywrightManager {
 
     private void launchBrowser(String browser) {
         playwrightThreadLocal.set(Playwright.create());
+        browserThreadLocal.set(Optional.ofNullable(getBrowser(browser)).orElseGet(() -> getCustomDevice(browser)));
+        if (device != null) {
+            Browser.NewContextOptions contextOptions = new Browser.NewContextOptions().setStorageStatePath(Paths.get("./src/test/resources/state.json"));
+            setContextThreadLocal(browser().newContext(contextOptions
+                    .setUserAgent(device.getUserAgent())
+                    .setViewportSize(Optional.ofNullable(device.getViewport()).orElse(contextOptions.viewportSize == null ? null : contextOptions.viewportSize.orElse(null)))
+                    .setScreenSize(Optional.ofNullable(device.getScreen()).orElse(contextOptions.screenSize))
+                    .setDeviceScaleFactor(device.getDeviceScaleFactor())
+                    .setIsMobile(device.isMobile())
+                    .setHasTouch(device.hasTouch())));
+        }
+    }
+
+    private Browser getBrowser(String browser) {
         BrowserType.LaunchOptions options = new BrowserType.LaunchOptions().setHeadless(
                 getProperty.asFlag("headless", true));
-        browserThreadLocal.set(switch (browser.toLowerCase()) {
+        return switch (browser.toLowerCase()) {
             case "chromium" -> playwright().chromium().launch(options);
             case "firefox" -> playwright().firefox().launch(options);
-            case "safari" -> playwright().webkit().launch(options);
+            case "webkit" -> playwright().webkit().launch(options);
             case "chrome" -> playwright().chromium().launch(options.setChannel("chrome"));
             case "edge" -> playwright().chromium().launch(options.setChannel("msedge"));
-            default -> throw new NoSuchElementException(String.format("%s Browser unsupported", browser));
-        });
+            default -> null;
+        };
+    }
+
+    private Browser getCustomDevice(String browser) {
+        Gson gson = new Gson();
+        try {
+            // Checking for null so other threads don't reread the file.
+            if (device == null) {
+                Map deviceInformation = gson.fromJson(Files.readString(
+                        Path.of("./src/main/java/devices/deviceDescriptors.json")), Map.class);
+                device = gson.fromJson(gson.toJson(deviceInformation.get(browser)), Device.class);
+            }
+            return Optional.ofNullable(getBrowser(device.getDefaultBrowserType())).orElseThrow(
+                    () -> new NoSuchElementException(String.format("%s Browser unsupported", browser)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
