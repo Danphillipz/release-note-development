@@ -1,4 +1,4 @@
-# Playwright Java Test Framework Template
+# Playwright-Cucumber Java Test Framework Template
 
 # TODO
 
@@ -13,38 +13,77 @@
 - [X] Set up evidence system
 - [X] Set up HTML reports
 - [ ] Javadoc everything
-- [ ] Document junit-platform
+- [X] Document junit-platform
 
-## Get started
+This repository provides the core setup required for testing with [Cucumber](https://cucumber.io/), [Playwright](https://playwright.dev/java/) and Java.
+The aim of this repository is to reduce setup time by providing ready-to-go implementations for many of the core
+requirements of a test framework.
 
-### Overview
+#### Key Features:
+
+- Ability to run all tests in parallel
+- Mechanism to switch browsers
+- Mechanism to emulate mobile devices
+- Mechanism to switch environments
+- Configurable through configuration files or CLI arguments
+- Retry test mechanism
+- Generate HTML test reports
+- Capture trace files
+
+> [!NOTE]
+> This framework is using the latest LTS java version
+> - [OpenJDK 21](https://learn.microsoft.com/en-us/java/openjdk/download#openjdk-21)
 
 ## Running Tests
 
+There are multiple ways to execute tests:
+
+1. Via your IDE at the scenario/feature level
+2. Via the [Cucumber test runner](./src/test/java/testRunner/CucumberRunnerTest.java) (Right click > Run)
+3. Via the command line:
+
+```shell
+mvn verify
+```
+
 ### Supported Browsers
 
-A number of browsers are supported by this test framework, including the ability to emulate mobile devices.
+A number of browsers are supported, including the ability to emulate mobile devices.
 
-To set the browser you can update the following property in the test configuration file (see [test configuration](#configuration-file):
+To set the browser you can update the following property in the test configuration file (see [test configuration](#configuration-file)):
+
 ```properties
 browser=chromium | firefox | webkit | chrome | edge
 ```
 
-A list of supported mobile device confugrations are defined in the [deviceDescriptors](./src/main/java/devices/deviceDescriptors.json) file.
-This list has been copied from the official playwright [device descriptors source](https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/deviceDescriptorsSource.json).
+Alternatively, this can be overridden with the corresponding CLI argument:
+
+```shell
+mvn verify -Dbrowser=edge
+```
+
+A list of supported mobile device configurations are defined in
+the [deviceDescriptors](./src/main/java/devices/deviceDescriptors.json) file.
+This list has been copied from the official
+playwright [device descriptors source](https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/deviceDescriptorsSource.json)
+.
 
 To add a new device, simply update this json file with the relevant configuration details.
 
 You can test against an emulated device in the exact same way as you would set a browser, for example:
+
 ```properties
 browser=Galaxy S9+ | iPhone 8 | iPhone 13 Pro landscape
 ```
 
 > [!TIP]
-> When writing tests which are intended to run on both desktop and mobile devices you may need to know what type of device you are testing on. 
-> This can be determined through the `PlaywrightManager` with the following function call: `PlaywrightManager.get().isMobile()`
-> 
-### Test Tags
+> When writing tests which are intended to run on both desktop and mobile devices you may need to know what type of
+> device you are testing on.
+> This can be determined through the `PlaywrightManager` with the following function
+> call: `PlaywrightManager.get().isMobile()`
+>
+
+### Running tests via their tag
 
 Cucumber tags are mapped to JUnit tags. Note that the `@` symbol is not part of
 the JUnit tag. So the scenarios below are tagged with `Smoke` and `Sanity`.
@@ -79,7 +118,7 @@ For more information on how to select tags, see the relevant documentation:
 ### Test Retries
 
 To automatically rerun any failed tests as part of the build you can set `rerunFailingTestsCount` property in
-the `pom.xml`
+the [pom.xml](./pom.xml)
 
 ```xml
 
@@ -100,7 +139,7 @@ the `pom.xml`
 
 ## Test Configuration
 
-### Configuration file
+### Framework Configuration file
 
 The configuration for test execution can be set in `src/test/resources/config/configuration.properties`.
 
@@ -120,7 +159,7 @@ In this file you can define the following configuration:
   calling [setDefaultAssertionTimeout](https://playwright.dev/java/docs/api/class-playwrightassertions#playwright-assertions-set-default-assertion-timeout)
 - `trace`: Enables tracing for failed tests. See [trace files](#playwright-trace-files)
 
-### Environment files
+### Environment configuration files
 
 Environment configuration files exist alongside the framework configuration file. They should have the `.env.properties`
 extension.
@@ -133,7 +172,7 @@ For example the following environment property will attempt to load the `develop
 environment=development
 ```
 
-### CLI Arguments
+### Set configuration via the CLI
 
 You can override any of the configuration file values through the corresponding CLI argument.
 
@@ -142,6 +181,15 @@ For example, to run all tests on `webkit` in `headless` mode you could run the f
 ```shell
 mvn verify -Dbrowser=safari -Dheadless=false
 ```
+
+### JUnit Configuration (Parallelism)
+
+Parallel testing is enabled by default and has been set to use `dynamic parallelism` which computes the desired
+parallelism as `available cores` * `dynamic factor`.
+
+This can be further configured via the [junit-platform.properties](./src/test/resources/junit-platform.properties) file.
+See the [cucumber-junit-platform-engine](https://github.com/cucumber/cucumber-jvm/tree/main/cucumber-junit-platform-engine#parallel-execution)
+documentation for more information.
 
 ## Test Reporting
 
