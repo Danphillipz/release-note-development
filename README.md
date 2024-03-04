@@ -1,20 +1,5 @@
 # Playwright-Cucumber Java Test Framework Template
 
-# TODO
-
-- [X] Mechanism to run tests single threaded (via CLI and in IDE)
-- [X] Parallel test execution
-- [X] Mechanism to switch environments
-- [X] Mechanism to switch browsers (And set up mobile emulation maybe?)
-- [X] Mobile emulation system from deviceDescriptors
-- [X] Mechanism to rerun tests automatically upon failure
-- [X] Come up with a CLI run option (with params for env, browsers etc.)
-- [X] Set up trace files
-- [X] Set up evidence system
-- [X] Set up HTML reports
-- [ ] Javadoc everything
-- [X] Document junit-platform
-
 This repository provides the core setup required for testing with [Cucumber](https://cucumber.io/), [Playwright](https://playwright.dev/java/) and Java.
 The aim of this repository is to reduce setup time by providing ready-to-go implementations for many of the core
 requirements of a test framework.
