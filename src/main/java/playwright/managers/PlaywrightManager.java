@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -23,11 +24,15 @@ public class PlaywrightManager {
     private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
-    private ConfigurationManager.PropertyHandler getProperty = ConfigurationManager.get().configuration();
-
+    private final ConfigurationManager.PropertyHandler getProperty = ConfigurationManager.get().configuration();
+    private final Gson gson = new Gson();
+    private Map<String, Object> deviceInformation;
     private Device device;
 
-    private PlaywrightManager() {
+    private PlaywrightManager(String browser) {
+        if (!isSupportedBrowser(browser)) {
+            throw new UnsupportedOperationException(String.format("%s browser is not supported", browser));
+        }
     }
 
     /**
@@ -37,7 +42,7 @@ public class PlaywrightManager {
      * @throws NullPointerException If the browser factory has not been started.
      */
     public static PlaywrightManager get() {
-        return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Browser factory has not started"));
+        return Optional.ofNullable(instance).orElseThrow(() -> new NullPointerException("Playwright manager has not started"));
     }
 
     /**
@@ -52,8 +57,8 @@ public class PlaywrightManager {
     /**
      * Starts the PlaywrightManager by creating a new instance of it.
      */
-    public static void startPlaywright() {
-        instance = new PlaywrightManager();
+    public static void startPlaywright(String browser) {
+        instance = new PlaywrightManager(browser);
     }
 
     /**
@@ -71,7 +76,7 @@ public class PlaywrightManager {
      * @return True if the device is mobile, false otherwise.
      */
     public boolean isMobile() {
-        return device == null ? false : device.isMobile();
+        return device != null && device.isMobile();
     }
 
     /**
@@ -131,8 +136,11 @@ public class PlaywrightManager {
     /**
      * Launches the browser specified with the {@code browser} property defined within configuration or CLI properties.
      */
-    public void launchTest() {
-        launchBrowser(getProperty.asRequiredString("browser"));
+    public void launchBrowser() {
+        String browser = getProperty.asRequiredString("browser");
+        playwrightThreadLocal.set(Playwright.create());
+        browserThreadLocal.set(Optional.ofNullable(getBrowser(browser)).orElseGet(() -> getCustomDevice(browser)));
+        if (device != null) configureCustomDevice();
     }
 
     /**
@@ -153,14 +161,23 @@ public class PlaywrightManager {
     }
 
     /**
-     * Launches the specified browser.
+     * Checks to see whether the specified browser is supported by the framework
      *
-     * @param browser The name of the browser to launch.
+     * @param browser Browser to check
+     * @return true if browser supported
+     * @throws IOException if an error occurs while reading the custom device descriptors
      */
-    private void launchBrowser(String browser) {
-        playwrightThreadLocal.set(Playwright.create());
-        browserThreadLocal.set(Optional.ofNullable(getBrowser(browser)).orElseGet(() -> getCustomDevice(browser)));
-        if (device != null) configureCustomDevice();
+    public boolean isSupportedBrowser(String browser) {
+        if (!Arrays.asList("chromium", "firefox", "webkit", "chrome", "edge").contains(browser.toLowerCase())) {
+            try {
+                deviceInformation = gson.fromJson(Files.readString(
+                        Path.of("./src/main/java/devices/deviceDescriptors.json")), Map.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return deviceInformation.get(browser) != null;
+        }
+        return true;
     }
 
     /**
@@ -191,19 +208,9 @@ public class PlaywrightManager {
      * @return The browser instance.
      */
     private Browser getCustomDevice(String browser) {
-        Gson gson = new Gson();
-        try {
-            // Checking for null so other threads don't re-read the file.
-            if (device == null) {
-                Map deviceInformation = gson.fromJson(Files.readString(
-                        Path.of("./src/main/java/devices/deviceDescriptors.json")), Map.class);
-                device = gson.fromJson(gson.toJson(deviceInformation.get(browser)), Device.class);
-            }
-            return Optional.ofNullable(getBrowser(device.getDefaultBrowserType())).orElseThrow(
-                    () -> new NoSuchElementException(String.format("%s Browser unsupported", browser)));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        device = gson.fromJson(gson.toJson(deviceInformation.get(browser)), Device.class);
+        return Optional.ofNullable(getBrowser(device.getDefaultBrowserType())).orElseThrow(
+                () -> new NoSuchElementException(String.format("%s Browser unsupported", browser)));
     }
 
     /**

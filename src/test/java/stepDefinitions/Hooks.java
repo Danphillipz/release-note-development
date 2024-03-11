@@ -19,7 +19,7 @@ public class Hooks {
      */
     @BeforeAll
     public static void setup() {
-        PlaywrightManager.startPlaywright();
+        PlaywrightManager.startPlaywright(ConfigurationManager.get().configuration().asRequiredString("browser"));
     }
 
     /**
@@ -35,7 +35,7 @@ public class Hooks {
      */
     @Before
     public void beforeScenario() {
-        PlaywrightManager.perform().launchTest();
+        PlaywrightManager.perform().launchBrowser();
     }
 
     /**
