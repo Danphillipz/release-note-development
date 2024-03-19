@@ -5,11 +5,20 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import playwright.managers.PlaywrightManager;
 
-/** An example page object extending from the core BasePage. */
+/**
+ * An example page object extending from the core BasePage.
+ */
 public class ExamplePage extends BasePage {
 
+  /**
+   * Creates an example page and registers a locator handler to dismiss the settings popup when it
+   * appears
+   */
   public ExamplePage(Page page) {
     super(page);
+    var settingsPopUp = page().getByRole(AriaRole.BUTTON,
+        new Page.GetByRoleOptions().setName("Got it").setExact(true));
+    page().addLocatorHandler(settingsPopUp, settingsPopUp::click);
   }
 
   /**
