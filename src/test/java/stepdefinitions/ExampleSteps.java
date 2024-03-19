@@ -13,7 +13,7 @@ import playwright.pages.ExamplePage;
  */
 public class ExampleSteps {
 
-  ExamplePage homePage;
+  private final ExamplePage homePage;
 
   public ExampleSteps() {
     homePage = new ExamplePage(PlaywrightManager.get().page());

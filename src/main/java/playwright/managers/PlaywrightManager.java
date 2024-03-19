@@ -1,6 +1,7 @@
 package playwright.managers;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
@@ -11,6 +12,7 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import devices.Device;
 import exceptions.ConfigurationException;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +39,7 @@ public class PlaywrightManager {
   private final ConfigurationManager.PropertyHandler getProperty =
       ConfigurationManager.get().configuration();
   private final Gson gson = new Gson();
-  private Map<String, Object> deviceInformation;
+  private Map<String, Device> deviceInformation;
   private Device device;
 
   private PlaywrightManager(String browser) {
@@ -204,7 +206,8 @@ public class PlaywrightManager {
         deviceInformation =
             gson.fromJson(
                 Files.readString(Path.of("./src/main/java/devices/deviceDescriptors.json")),
-                Map.class);
+                new TypeToken<Map<String, Device>>() {
+                }.getType());
       } catch (IOException e) {
         throw new ConfigurationException("Unable to read the device description json", e);
       }
@@ -243,7 +246,7 @@ public class PlaywrightManager {
    * @return The browser instance.
    */
   private Browser getCustomDevice(String browser) {
-    device = gson.fromJson(gson.toJson(deviceInformation.get(browser)), Device.class);
+    device = deviceInformation.get(browser);
     return Optional.ofNullable(getBrowser(device.getDefaultBrowserType()))
         .orElseThrow(
             () -> new NoSuchElementException(String.format("%s Browser unsupported", browser)));

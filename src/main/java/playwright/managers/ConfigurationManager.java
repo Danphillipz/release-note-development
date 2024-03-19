@@ -62,7 +62,7 @@ public class ConfigurationManager {
   /**
    * A utility class which provides mechanisms to retrieve configuration data.
    */
-  public class PropertyHandler {
+  public static class PropertyHandler {
 
     private final Properties properties;
 
