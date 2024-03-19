@@ -18,8 +18,9 @@ requirements of a test framework.
 - Capture trace files
 
 > [!NOTE]
-> This framework is using the latest LTS java version
+> This framework is using the latest LTS java version and requires Maven >= 3.8.x
 > - [OpenJDK 21](https://learn.microsoft.com/en-us/java/openjdk/download#openjdk-21)
+> - [Maven](https://maven.apache.org/download.cgi)
 
 ## Code Quality
 
@@ -28,6 +29,12 @@ the [Maven Checkstyle Plugin](https://maven.apache.org/plugins/maven-checkstyle-
 to verify and enforce coding style standards.
 We use the [Google Java Style](https://google.github.io/styleguide/javaguide.html) rules which is a
 recommended standard.
+
+To scan the repository for style violations you can run the following command:
+
+```shell
+mvn validate
+```
 
 ### Recommendations
 
