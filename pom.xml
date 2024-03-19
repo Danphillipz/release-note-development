@@ -1,5 +1,6 @@
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.example</groupId>
@@ -20,6 +21,7 @@
         <junit.platform.version>1.10.2</junit.platform.version>
         <maven.surefire.version>3.2.5</maven.surefire.version>
         <cluecumber.version>3.1.0</cluecumber.version>
+        <checkstyle-maven-plugin.version>3.3.1</checkstyle-maven-plugin.version>
     </properties>
 
     <build>
@@ -42,16 +44,36 @@
                 <artifactId>cluecumber-maven</artifactId>
                 <version>${cluecumber.version}</version>
                 <configuration>
-                    <sourceJsonReportDirectory>${project.build.directory}/cucumber-report</sourceJsonReportDirectory>
+                    <sourceJsonReportDirectory>${project.build.directory}/cucumber-report
+                    </sourceJsonReportDirectory>
                     <generatedHtmlReportDirectory>${project.build.directory}/generated-report
                     </generatedHtmlReportDirectory>
                     <expandBeforeAfterHooks>true</expandBeforeAfterHooks>
                     <expandAttachments>true</expandAttachments>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle-maven-plugin.version}</version>
+                <configuration>
+                    <consoleOutput>true</consoleOutput>
+                    <configLocation>google_checks.xml</configLocation>
+                    <violationSeverity>warning</violationSeverity>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
     <dependencies>
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
