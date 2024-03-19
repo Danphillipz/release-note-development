@@ -31,21 +31,21 @@ recommended standard.
 
 ### Recommendations
 
-We recommend installing the following plugins for your IDE to assist with managing code quality:
-
-- [Sonarlint](https://www.sonarsource.com/products/sonarlint/): A linting tool with real-time
-  feedback
-
-To enable auto formatting in accordance with
-the [Google Java Style](https://google.github.io/styleguide/javaguide.html) make the following
-changes to your IDE settings (IntelliJ instructions) :
-
-- Go to: File > Settings > Editor > Code Style
-- Next to the Scheme drop-down menu select the gear icon then Import Scheme > IntelliJ IDEA code
-  style XML
-- Select the [intellij-java-google-style.xml](./tools/formatter/intellij-java-google-style.xml).
-- Give the schema a name (or use the default GoogleStyle name from the import). Click OK or Apply
-  for the settings to take effect.
+- We recommend using the [IntelliJ IDE](https://www.jetbrains.com/idea/), all subsequent
+  recommendations are based upon using this IDE.
+- We recommend installing the following plugin(s) for your IDE to assist with managing code quality:
+    - [Sonarlint](https://www.sonarsource.com/products/sonarlint/): A linting tool with real-time
+      feedback
+- Enable auto formatting in accordance with
+  the [Google Java Style](https://google.github.io/styleguide/javaguide.html) make the following
+  changes to your IDE settings:
+    - Go to: File > Settings > Editor > Code Style
+    - Next to the Scheme drop-down menu select the gear icon then Import Scheme > IntelliJ IDEA code
+      style XML
+    - Select the [intellij-java-google-style.xml](./tools/formatter/intellij-java-google-style.xml).
+    - Give the schema a name (or use the default GoogleStyle name from the import). Click OK or
+      Apply
+      for the settings to take effect.
 
 > [!TIP]
 > Enable auto formatting upon save by enabling the 'Reformat Code' option under File > Settings >
@@ -69,7 +69,7 @@ mvn verify
 A number of browsers are supported, including the ability to emulate mobile devices.
 
 To set the browser you can update the following property in the test configuration file (
-see [test configuration](#configuration-file)):
+see [test configuration](#test-configuration)):
 
 ```properties
 browser=chromium | firefox | webkit | chrome | edge

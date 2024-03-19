@@ -1,18 +1,24 @@
 package playwright.managers;
 
+import exceptions.ConfigurationException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Properties;
 
-/** Singleton class to manage Environment and Testing configuration. */
+/**
+ * Singleton class to manage Environment and Testing configuration.
+ */
+@SuppressWarnings("java:S6548")
 public class ConfigurationManager {
 
   private static ConfigurationManager instance;
   private final PropertyHandler configuration;
   private PropertyHandler environment;
 
-  /** Constructs a ConfigurationManager and initialises the configuration PropertyHandler. */
+  /**
+   * Constructs a ConfigurationManager and initialises the configuration PropertyHandler.
+   */
   private ConfigurationManager() {
     configuration = new PropertyHandler("./src/test/resources/config/configuration.properties");
   }
@@ -22,8 +28,11 @@ public class ConfigurationManager {
    *
    * @return The singleton instance of ConfigurationManager.
    */
-  public static ConfigurationManager get() {
-    return instance == null ? instance = new ConfigurationManager() : instance;
+  public static synchronized ConfigurationManager get() {
+    if (instance == null) {
+      instance = new ConfigurationManager();
+    }
+    return instance;
   }
 
   /**
@@ -32,13 +41,13 @@ public class ConfigurationManager {
    * @return The environment PropertyHandler.
    */
   public PropertyHandler environment() {
-    return environment == null
-        ? environment =
-            new PropertyHandler(
-                String.format(
-                    "./src/test/resources/config/%s.env.properties",
-                    configuration.asRequiredString("environment")))
-        : environment;
+    if (environment == null) {
+      environment = new PropertyHandler(
+          String.format(
+              "./src/test/resources/config/%s.env.properties",
+              configuration.asRequiredString("environment")));
+    }
+    return environment;
   }
 
   /**
@@ -50,8 +59,11 @@ public class ConfigurationManager {
     return configuration;
   }
 
-  /** A utility class which provides mechanisms to retrieve configuration data. */
+  /**
+   * A utility class which provides mechanisms to retrieve configuration data.
+   */
   public class PropertyHandler {
+
     private final Properties properties;
 
     /**
@@ -60,11 +72,12 @@ public class ConfigurationManager {
      * @param path The path to the properties file.
      */
     public PropertyHandler(String path) {
-      try {
+      try (FileInputStream input = new FileInputStream(path)) {
         properties = new Properties();
-        properties.load(new FileInputStream(path));
+        properties.load(input);
       } catch (IOException e) {
-        throw new Error(e);
+        throw new ConfigurationException(
+            String.format("There was an error loading the property file at path: %s", path), e);
       }
     }
 
@@ -72,7 +85,7 @@ public class ConfigurationManager {
      * Retrieves a configuration property with the given name.
      *
      * @param property The name of the property.
-     * @param strict Indicates whether to throw an error if the property is not found.
+     * @param strict   Indicates whether to throw an error if the property is not found.
      * @return The value of the property.
      * @throws NoSuchFieldError If the property is not found and strict mode is enabled.
      */
@@ -107,7 +120,7 @@ public class ConfigurationManager {
      * Retrieves a configuration property as a boolean but returns the default value if no matching
      * property found.
      *
-     * @param property The name of the property.
+     * @param property     The name of the property.
      * @param defaultValue The default value.
      * @return The boolean value of the property, or the default value if not found.
      */
@@ -141,7 +154,7 @@ public class ConfigurationManager {
      * Retrieves a configuration property as a string but returns the default value if no matching
      * property found.
      *
-     * @param property The name of the property.
+     * @param property     The name of the property.
      * @param defaultValue The default value.
      * @return The string value of the property, or the default value if not found.
      */
@@ -177,7 +190,7 @@ public class ConfigurationManager {
      * Retrieves a configuration property as an integer but returns the default value if no matching
      * property found.
      *
-     * @param property The name of the property.
+     * @param property     The name of the property.
      * @param defaultValue The default value.
      * @return The integer value of the property, or the default value if not found.
      */

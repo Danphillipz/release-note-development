@@ -9,6 +9,7 @@ import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Tracing;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import devices.Device;
+import exceptions.ConfigurationException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,9 +19,16 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-/** Singleton class to manage Playwright instances and browser configurations. */
+/**
+ * Singleton class to manage Playwright instances and browser configurations.
+ */
 public class PlaywrightManager {
 
+  private static final String CHROMIUM_BROWSER_NAME = "chromium";
+  private static final String FIREFOX_BROWSER_NAME = "firefox";
+  private static final String WEBKIT_BROWSER_NAME = "webkit";
+  private static final String CHROME_BROWSER_NAME = "chrome";
+  private static final String EDGE_BROWSER_NAME = "edge";
   private static PlaywrightManager instance;
   private final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>();
   private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
@@ -34,7 +42,7 @@ public class PlaywrightManager {
 
   private PlaywrightManager(String browser) {
     if (!isSupportedBrowser(browser)) {
-      throw new UnsupportedOperationException(
+      throw new ConfigurationException(
           String.format("%s browser is not supported", browser));
     }
   }
@@ -59,7 +67,9 @@ public class PlaywrightManager {
     return get();
   }
 
-  /** Starts the PlaywrightManager by creating a new instance of it. */
+  /**
+   * Starts the PlaywrightManager by creating a new instance of it.
+   */
   public static void startPlaywright(String browser) {
     instance = new PlaywrightManager(browser);
   }
@@ -160,17 +170,23 @@ public class PlaywrightManager {
     }
   }
 
-  /** Ends the current test session. */
+  /**
+   * Ends the current test session.
+   */
   public void endTest() {
     page().close();
     browserContext().close();
-    pageThreadLocal.set(null);
-    contextThreadLocal.set(null);
+    pageThreadLocal.remove();
+    contextThreadLocal.remove();
   }
 
-  /** Shuts down the browser. */
+  /**
+   * Shuts down the browser.
+   */
   public void shutdown() {
     browser().close();
+    browserThreadLocal.remove();
+    playwrightThreadLocal.remove();
   }
 
   /**
@@ -178,10 +194,11 @@ public class PlaywrightManager {
    *
    * @param browser Browser to check
    * @return true if browser supported
-   * @throws IOException if an error occurs while reading the custom device descriptors
+   * @throws ConfigurationException if an error occurs while reading the custom device descriptors
    */
   public boolean isSupportedBrowser(String browser) {
-    if (!Arrays.asList("chromium", "firefox", "webkit", "chrome", "edge")
+    if (!Arrays.asList(CHROME_BROWSER_NAME, EDGE_BROWSER_NAME, CHROMIUM_BROWSER_NAME,
+            FIREFOX_BROWSER_NAME, WEBKIT_BROWSER_NAME)
         .contains(browser.toLowerCase())) {
       try {
         deviceInformation =
@@ -189,7 +206,7 @@ public class PlaywrightManager {
                 Files.readString(Path.of("./src/main/java/devices/deviceDescriptors.json")),
                 Map.class);
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new ConfigurationException("Unable to read the device description json", e);
       }
       return deviceInformation.get(browser) != null;
     }
@@ -206,11 +223,12 @@ public class PlaywrightManager {
     BrowserType.LaunchOptions options =
         new BrowserType.LaunchOptions().setHeadless(getProperty.asFlag("headless", true));
     return switch (browser.toLowerCase()) {
-      case "chromium" -> playwright().chromium().launch(options);
-      case "firefox" -> playwright().firefox().launch(options);
-      case "webkit" -> playwright().webkit().launch(options);
-      case "chrome" -> playwright().chromium().launch(options.setChannel("chrome"));
-      case "edge" -> playwright().chromium().launch(options.setChannel("msedge"));
+      case CHROMIUM_BROWSER_NAME -> playwright().chromium().launch(options);
+      case FIREFOX_BROWSER_NAME -> playwright().firefox().launch(options);
+      case WEBKIT_BROWSER_NAME -> playwright().webkit().launch(options);
+      case CHROME_BROWSER_NAME ->
+          playwright().chromium().launch(options.setChannel("chrome")); //NOSONAR
+      case EDGE_BROWSER_NAME -> playwright().chromium().launch(options.setChannel("msedge"));
       default -> null;
     };
   }
@@ -231,7 +249,9 @@ public class PlaywrightManager {
             () -> new NoSuchElementException(String.format("%s Browser unsupported", browser)));
   }
 
-  /** Configures the custom device settings for the browser context. */
+  /**
+   * Configures the custom device settings for the browser context.
+   */
   private void configureCustomDevice() {
     Browser.NewContextOptions contextOptions =
         new Browser.NewContextOptions()
@@ -244,7 +264,7 @@ public class PlaywrightManager {
                     .setViewportSize(
                         Optional.ofNullable(device.getViewport())
                             .orElse(
-                                contextOptions.viewportSize == null
+                                contextOptions.viewportSize == null //NOSONAR
                                     ? null
                                     : contextOptions.viewportSize.orElse(null)))
                     .setScreenSize(
