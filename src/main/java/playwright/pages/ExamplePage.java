@@ -12,7 +12,7 @@ public class ExamplePage extends BasePage {
 
   /**
    * Creates an example page and registers a locator handler to dismiss the settings popup when it
-   * appears
+   * appears.
    */
   public ExamplePage(Page page) {
     super(page);
