@@ -2,7 +2,6 @@
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>org.example</groupId>
   <artifactId>playwright-java-core</artifactId>
   <version>1.0</version>
@@ -11,97 +10,179 @@
   <name>playwright-java-core</name>
   <url>http://maven.apache.org</url>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-    <!-- Dependency versions -->
-    <playwright.version>1.42.0</playwright.version>
-    <cucumber.version>7.15.0</cucumber.version>
-    <junit.platform.version>1.10.2</junit.platform.version>
-    <maven.surefire.version>3.2.5</maven.surefire.version>
-    <cluecumber.version>3.1.0</cluecumber.version>
-    <checkstyle-maven-plugin.version>3.3.1</checkstyle-maven-plugin.version>
-  </properties>
-
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
         <version>${maven.surefire.version}</version>
         <configuration>
-          <!--rerunFailingTestsCount>2</rerunFailingTestsCount-->
-          <properties>
-            <configurationParameters>
-              cucumber.junit-platform.naming-strategy=long
-            </configurationParameters>
-          </properties>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>com.trivago.rta</groupId>
-        <artifactId>cluecumber-maven</artifactId>
-        <version>${cluecumber.version}</version>
-        <configuration>
-          <sourceJsonReportDirectory>${project.build.directory}/cucumber-report
-          </sourceJsonReportDirectory>
-          <generatedHtmlReportDirectory>${project.build.directory}/generated-report
-          </generatedHtmlReportDirectory>
-          <expandBeforeAfterHooks>true</expandBeforeAfterHooks>
-          <expandAttachments>true</expandAttachments>
+          <skipTests>${skip.surefire.tests}</skipTests>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${checkstyle-maven-plugin.version}</version>
-        <configuration>
-          <consoleOutput>true</consoleOutput>
-          <configLocation>google_checks.xml</configLocation>
-          <violationSeverity>warning</violationSeverity>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-        </configuration>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven.failsafe.version}</version>
         <executions>
           <execution>
-            <id>validate</id>
-            <phase>validate</phase>
+            <id>run-tests</id>
+            <phase>integration-test</phase>
             <goals>
-              <goal>check</goal>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <rerunFailingTestsCount>0</rerunFailingTestsCount>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce</id>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>junit:junit</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>cluecumber-maven</artifactId>
+        <configuration>
+          <expandAttachments>true</expandAttachments>
+          <expandBeforeAfterHooks>true</expandBeforeAfterHooks>
+          <generatedHtmlReportDirectory>${project.build.directory}/generated-report
+          </generatedHtmlReportDirectory>
+          <sourceJsonReportDirectory>${project.build.directory}/cucumber-report
+          </sourceJsonReportDirectory>
+          <failScenariosOnPendingOrUndefinedSteps>true</failScenariosOnPendingOrUndefinedSteps>
+        </configuration>
+        <groupId>com.trivago.rta</groupId>
+        <version>${cluecumber.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <configLocation>google_checks.xml</configLocation>
+          <consoleOutput>true</consoleOutput>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <violationSeverity>warning</violationSeverity>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <id>validate</id>
+            <phase>validate</phase>
+          </execution>
+        </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <version>${checkstyle-maven-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <artifactId>git-build-hook-maven-plugin</artifactId>
+        <configuration>
+          <gitConfig>
+            <core.hooksPath>hooks/</core.hooksPath>
+          </gitConfig>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>configure</goal>
+            </goals>
+          </execution>
+        </executions>
+        <groupId>com.rudikershaw.gitbuildhook</groupId>
+        <version>${git.buildhook.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec.maven.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <classpathScope>test</classpathScope>
+        </configuration>
       </plugin>
     </plugins>
   </build>
   <dependencies>
     <dependency>
-      <groupId>com.microsoft.playwright</groupId>
       <artifactId>playwright</artifactId>
+      <groupId>com.microsoft.playwright</groupId>
       <version>${playwright.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.cucumber</groupId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
+    </dependency>
+    <dependency>
       <artifactId>cucumber-java</artifactId>
+      <groupId>io.cucumber</groupId>
       <version>${cucumber.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.cucumber</groupId>
-      <artifactId>cucumber-junit</artifactId>
-      <version>${cucumber.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.cucumber</groupId>
       <artifactId>cucumber-junit-platform-engine</artifactId>
-      <version>${cucumber.version}</version>
+      <groupId>io.cucumber</groupId>
       <scope>test</scope>
+      <version>${cucumber.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-suite</artifactId>
-      <version>${junit.platform.version}</version>
+      <groupId>org.junit.platform</groupId>
       <scope>test</scope>
+      <version>${junit.platform.version}</version>
     </dependency>
   </dependencies>
+
+  <properties>
+    <!-- Configuration -->
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <skip.surefire.tests>false</skip.surefire.tests>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Dependency versions -->
+    <checkstyle-maven-plugin.version>3.5.0</checkstyle-maven-plugin.version>
+    <checkstyle.version>10.18.2</checkstyle.version>
+    <cluecumber.version>3.8.1</cluecumber.version>
+    <cucumber.version>7.20.0</cucumber.version>
+    <junit.platform.version>1.11.2</junit.platform.version>
+    <junit.jupiter.version>5.11.2</junit.jupiter.version>
+    <maven.surefire.version>3.5.1</maven.surefire.version>
+    <maven.failsafe.version>3.2.5</maven.failsafe.version>
+    <playwright.version>1.47.0</playwright.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+    <git.buildhook.version>3.5.0</git.buildhook.version>
+    <exec.maven.version>3.4.1</exec.maven.version>
+  </properties>
 </project>

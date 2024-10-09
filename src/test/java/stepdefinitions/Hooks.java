@@ -1,79 +1,59 @@
 package stepdefinitions;
 
-import com.microsoft.playwright.Tracing;
+import enums.Configuration;
 import io.cucumber.java.After;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.Scenario;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
+import loggers.FileLogger;
 import playwright.managers.ConfigurationManager;
 import playwright.managers.PlaywrightManager;
+import playwright.managers.ScenarioManager;
 
-/** Class containing Cucumber hooks for setup and teardown actions. */
+/**
+ * Class containing Cucumber hooks for setup and teardown actions.
+ */
 public class Hooks {
 
-  /** Sets up PlaywrightManager before all scenarios. */
+  /**
+   * Sets up PlaywrightManager before all scenarios.
+   */
   @BeforeAll
   public static void setup() {
     PlaywrightManager.startPlaywright(
-        ConfigurationManager.get().configuration().asRequiredString("browser"));
+        ConfigurationManager.get().configuration().asRequiredString(Configuration.BROWSER));
   }
 
-  /** Tears down PlaywrightManager after all scenarios. */
+  /**
+   * Sets up the cucumber scenario and checks that it has been correctly tagged.
+   *
+   * @param scenario CucumberScenario
+   */
+  @Before(order = 1)
+  public static void start(Scenario scenario) {
+    FileLogger.instance().setScenario(scenario);
+    ScenarioManager.get().setScenario(scenario);
+  }
+
+  /**
+   * Performs cleanup actions after each scenario. Will pass the completed scenario to the scenario
+   * manager to perform tidy up actions.
+   */
+  @After()
+  public void afterScenario(Scenario scenario) {
+    FileLogger.log().info("Test Complete");
+    ScenarioManager.get().endScenario(scenario);
+    PlaywrightManager.perform().endTest();
+    FileLogger.instance().shutdown();
+  }
+
+  /**
+   * Tears down PlaywrightManager after all scenarios.
+   */
   @AfterAll
   public static void tearDown() {
     PlaywrightManager.perform().shutdown();
   }
 
-  /** Launches the test before each scenario. */
-  @Before
-  public void beforeScenario() {
-    PlaywrightManager.perform().launchBrowser();
-  }
-
-  /**
-   * Performs cleanup actions after each scenario. Will capture and attach a screenshot to reports
-   * upon failure.
-   *
-   * <p>If the <b>trace</b> flag is enabled, this will call {@link Hooks#attachTrace(Scenario,
-   * String)}.
-   *
-   * @param scenario The scenario that just ran.
-   */
-  @After
-  public void afterScenario(Scenario scenario) {
-    if (scenario.isFailed()) {
-      String name = scenario.getName().replace(" ", "-");
-      if (ConfigurationManager.get().configuration().asFlag("trace", false)) {
-        attachTrace(scenario, name);
-      }
-      byte[] screenshot = PlaywrightManager.get().page().screenshot();
-      scenario.attach(screenshot, "image/png", String.format("%s-failure-screenshot", name));
-    }
-
-    PlaywrightManager.perform().endTest();
-  }
-
-  /**
-   * Attaches a trace file to the scenario and creates a link to this within reports.
-   *
-   * @param scenario The scenario to which the trace will be attached.
-   * @param name The name of the scenario.
-   */
-  private void attachTrace(Scenario scenario, String name) {
-    Path trace = Paths.get(String.format("target/trace/%s-%s.zip", name, UUID.randomUUID()));
-    String linkHtml =
-        String.format(
-            "<p>To view this trace file, upload it to <b>\"https://trace.playwright.dev/\"</b>: "
-                + "<a href=\"../%s\">Download Trace File</a>",
-            Paths.get("target").relativize(trace));
-    scenario.attach(linkHtml.getBytes(), "text/html", "Trace File");
-    PlaywrightManager.get()
-        .browserContext()
-        .tracing()
-        .stop(new Tracing.StopOptions().setPath(trace));
-  }
 }

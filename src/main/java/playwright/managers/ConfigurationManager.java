@@ -1,8 +1,11 @@
 package playwright.managers;
 
+import enums.Configuration;
 import exceptions.ConfigurationException;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -45,7 +48,7 @@ public class ConfigurationManager {
       environment = new PropertyHandler(
           String.format(
               "./src/test/resources/config/%s.env.properties",
-              configuration.asRequiredString("environment")));
+              configuration.asRequiredString(Configuration.ENVIRONMENT)));
     }
     return environment;
   }
@@ -75,6 +78,7 @@ public class ConfigurationManager {
       try (FileInputStream input = new FileInputStream(path)) {
         properties = new Properties();
         properties.load(input);
+        overwriteSecrets(path);
       } catch (IOException e) {
         throw new ConfigurationException(
             String.format("There was an error loading the property file at path: %s", path), e);
@@ -84,16 +88,21 @@ public class ConfigurationManager {
     /**
      * Retrieves a configuration property with the given name.
      *
-     * @param property The name of the property.
-     * @param strict   Indicates whether to throw an error if the property is not found.
+     * @param configuration The enum of the configuration property.
+     * @param strict        Indicates whether to throw an error if the property is not found.
      * @return The value of the property.
      * @throws NoSuchFieldError If the property is not found and strict mode is enabled.
      */
-    private Object getConfiguration(String property, boolean strict) throws NoSuchFieldError {
-      Object config = System.getProperty(property);
+    private Object getConfiguration(Configuration configuration, boolean strict)
+        throws NoSuchFieldError {
+      var property = configuration.getProperty();
+      var envProperty = getEnvNameForOperatingSystem(property);
+      Object config = Optional.ofNullable(System.getenv(envProperty))
+          .orElse(System.getProperty(property));
+
       if (strict) {
         return Optional.ofNullable(config)
-            .orElse(
+            .orElseGet(() ->
                 Optional.ofNullable(properties.get(property))
                     .orElseThrow(
                         () ->
@@ -106,11 +115,11 @@ public class ConfigurationManager {
     /**
      * Retrieves a configuration property as a boolean.
      *
-     * @param property The name of the property.
+     * @param configuration The enum of the configuration property.
      * @return The boolean value of the property, or null if not found.
      */
-    public Boolean asFlag(String property) {
-      var configurationValue = getConfiguration(property, false);
+    public Boolean asFlag(Configuration configuration) {
+      var configurationValue = getConfiguration(configuration, false);
       return configurationValue == null
           ? null
           : Boolean.parseBoolean(String.valueOf(configurationValue));
@@ -120,33 +129,33 @@ public class ConfigurationManager {
      * Retrieves a configuration property as a boolean but returns the default value if no matching
      * property found.
      *
-     * @param property     The name of the property.
-     * @param defaultValue The default value.
+     * @param configuration The enum of the configuration property.
+     * @param defaultValue  The default value.
      * @return The boolean value of the property, or the default value if not found.
      */
-    public boolean asFlag(String property, boolean defaultValue) {
-      return Optional.ofNullable(asFlag(property)).orElse(defaultValue);
+    public boolean asFlag(Configuration configuration, boolean defaultValue) {
+      return Optional.ofNullable(asFlag(configuration)).orElse(defaultValue);
     }
 
     /**
      * Retrieves a required configuration property as a boolean.
      *
-     * @param property The name of the property.
+     * @param configuration The enum of the configuration property.
      * @return The boolean value of the property.
      * @throws NoSuchFieldError If the property is not found.
      */
-    public boolean asRequiredFlag(String property) throws NoSuchFieldError {
-      return Boolean.parseBoolean(String.valueOf(getConfiguration(property, true)));
+    public boolean asRequiredFlag(Configuration configuration) throws NoSuchFieldError {
+      return Boolean.parseBoolean(String.valueOf(getConfiguration(configuration, true)));
     }
 
     /**
      * Retrieves a configuration property as a string.
      *
-     * @param property The name of the property.
+     * @param configuration The enum of the configuration property.
      * @return The string value of the property, or null if not found.
      */
-    public String asString(String property) {
-      var configurationValue = getConfiguration(property, false);
+    public String asString(Configuration configuration) {
+      var configurationValue = getConfiguration(configuration, false);
       return configurationValue == null ? null : String.valueOf(configurationValue);
     }
 
@@ -154,33 +163,33 @@ public class ConfigurationManager {
      * Retrieves a configuration property as a string but returns the default value if no matching
      * property found.
      *
-     * @param property     The name of the property.
-     * @param defaultValue The default value.
+     * @param configuration The enum of the configuration property.
+     * @param defaultValue  The default value.
      * @return The string value of the property, or the default value if not found.
      */
-    public String asString(String property, String defaultValue) {
-      return Optional.ofNullable(asString(property)).orElse(defaultValue);
+    public String asString(Configuration configuration, String defaultValue) {
+      return Optional.ofNullable(asString(configuration)).orElse(defaultValue);
     }
 
     /**
      * Retrieves a required configuration property as a string.
      *
-     * @param property The name of the property.
+     * @param configuration The enum of the configuration property.
      * @return The string value of the property.
      * @throws NoSuchFieldError If the property is not found.
      */
-    public String asRequiredString(String property) throws NoSuchFieldError {
-      return String.valueOf(getConfiguration(property, true));
+    public String asRequiredString(Configuration configuration) throws NoSuchFieldError {
+      return String.valueOf(getConfiguration(configuration, true));
     }
 
     /**
      * Retrieves a configuration property as an integer.
      *
-     * @param property The name of the property.
+     * @param configuration The enum of the configuration property.
      * @return The integer value of the property, or null if not found.
      */
-    public Integer asInteger(String property) {
-      var configurationValue = getConfiguration(property, false);
+    public Integer asInteger(Configuration configuration) {
+      var configurationValue = getConfiguration(configuration, false);
       return configurationValue == null
           ? null
           : Integer.valueOf(String.valueOf(configurationValue));
@@ -190,23 +199,54 @@ public class ConfigurationManager {
      * Retrieves a configuration property as an integer but returns the default value if no matching
      * property found.
      *
-     * @param property     The name of the property.
-     * @param defaultValue The default value.
+     * @param configuration The enum of the configuration property.
+     * @param defaultValue  The default value.
      * @return The integer value of the property, or the default value if not found.
      */
-    public Integer asInteger(String property, Integer defaultValue) {
-      return Optional.ofNullable(asInteger(property)).orElse(defaultValue);
+    public Integer asInteger(Configuration configuration, Integer defaultValue) {
+      return Optional.ofNullable(asInteger(configuration)).orElse(defaultValue);
     }
 
     /**
      * Retrieves a required configuration property as an integer.
      *
-     * @param property The name of the property.
+     * @param configuration The enum of the configuration property.
      * @return The integer value of the property.
      * @throws NoSuchFieldError If the property is not found.
      */
-    public Integer asRequiredInteger(String property) throws NoSuchFieldError {
-      return Integer.valueOf(String.valueOf(getConfiguration(property, true)));
+    public Integer asRequiredInteger(Configuration configuration) throws NoSuchFieldError {
+      return Integer.valueOf(String.valueOf(getConfiguration(configuration, true)));
+    }
+
+    private String getEnvNameForOperatingSystem(String env) {
+      if (Objects.equals(System.getenv("AGENT_OS"), "Linux")) {
+        return env.toUpperCase();
+      }
+
+      return env;
+    }
+
+    /**
+     * Attempts to load file {@code <environment-name>.env.secrets} into properties. Secret values
+     * take precedence.
+     *
+     * @param path The path to the environment file, assumes convention
+     *             {@code <environment-name>.env.properties}.
+     */
+    private void overwriteSecrets(String path) {
+      var secretsPath = path != null ? path.replace(".properties", ".secrets") : null;
+      if (secretsPath != null && new File(secretsPath).exists()) {
+        try (FileInputStream secrets = new FileInputStream(secretsPath)) {
+          var secretProps = new Properties();
+          secretProps.load(secrets);
+          properties.putAll(secretProps);
+        } catch (IOException e) {
+          throw new ConfigurationException(
+              String.format(
+                  "There was an error loading the property file at path: %s", secretsPath),
+              e);
+        }
+      }
     }
   }
 }

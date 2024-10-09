@@ -3,22 +3,23 @@ package playwright.pages;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import playwright.interfaces.NavigateTo;
 import playwright.managers.PlaywrightManager;
 
 /**
  * An example page object extending from the core BasePage.
  */
-public class ExamplePage extends BasePage {
+public class ExamplePage extends BasePage implements NavigateTo {
 
   /**
    * Creates an example page and registers a locator handler to dismiss the settings popup when it
    * appears.
    */
-  public ExamplePage(Page page) {
-    super(page);
-    var settingsPopUp = page().getByRole(AriaRole.BUTTON,
-        new Page.GetByRoleOptions().setName("Got it").setExact(true));
-    page().addLocatorHandler(settingsPopUp, settingsPopUp::click);
+  public ExamplePage() {
+    super();
+    var settingsPopUp = getPage().getByRole(AriaRole.BUTTON,
+        new Page.GetByRoleOptions().setName("Accept all").setExact(true));
+    getPage().addLocatorHandler(settingsPopUp, Locator::click);
   }
 
   /**
@@ -29,8 +30,8 @@ public class ExamplePage extends BasePage {
   public void performSearch(String searchTerm) {
     var searchBox =
         PlaywrightManager.get().isMobile()
-            ? page().getByRole(AriaRole.TEXTBOX)
-            : page().getByTitle("Search");
+            ? getPage().getByRole(AriaRole.TEXTBOX)
+            : getPage().getByTitle("Search");
     searchBox.fill(searchTerm);
     searchBox.press("Enter");
   }
@@ -42,8 +43,13 @@ public class ExamplePage extends BasePage {
    * @return first locator matching the search terms
    */
   public Locator getResult(String searchTerm) {
-    return page()
+    return getPage()
         .getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(searchTerm).setExact(true))
         .first();
+  }
+
+  @Override
+  public String getPageUrlExtension() {
+    return "";
   }
 }

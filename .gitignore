@@ -23,6 +23,16 @@
 hs_err_pid*
 replay_pid*
 
-.idea
+# IDE - IntelliJ
+/.idea/*
+# Keep the code styles.
+!/.idea/codeStyles
+/.idea/codeStyles/*
+!/.idea/codeStyles/Project.xml
+!/.idea/codeStyles/codeStyleConfig.xml
 
 target
+/playwright-java-core.iml
+
+# Secrets
+*.secrets

@@ -1,15 +1,22 @@
-Feature: Google Search Example 1
+@Smoke
+Feature: I want to test the retry logic
   I want to confirm the functionality of the google search feature
 
-  @playwright @poc
-  Scenario: User searches google for playwright
-    Given I am on the home page
-    When I search for "playwright"
-    Then "Playwright" should be in the search results
+  @playwright @poc @examples
+  Scenario Outline: User searches google for <Search Phrase>
 
-  @stacks
-  Scenario: User searches google for Ensono stacks
-    Given I am on the home page
-    When I search for "Ensono stacks"
-    Then "Ensono Stacks | Ensono Stacks" should be in the search results
+    Given I navigate to the "Home" page
+    When I search for "<Search Phrase>"
+    Then "<Expected Result>" should be in the search results
+
+    @TestCaseId_1
+    Examples:
+      | Search Phrase | Expected Result |
+      | playwright    | Playwright      |
+
+    @TestCaseId_2
+    Examples:
+      | Search Phrase | Expected Result                |
+      | Ensono stacks | Ensono Stacks \| Ensono Stacks |
+
 

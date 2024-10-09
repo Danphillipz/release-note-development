@@ -1,0 +1,7 @@
+#!/bin/bash
+mvn validate
+RESULT=$?
+if [ $RESULT -ne 0 ]; then
+    echo "Maven validation failed. Commit aborted."
+    exit 1
+fi

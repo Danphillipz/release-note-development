@@ -1,0 +1,35 @@
+parameters:
+  - name: publishCondition
+    type: object
+  - name: browserName
+    type: string
+  - name: name
+    type: string
+
+steps:
+  - script: "mvn cluecumber:reporting"
+    condition: ${{ parameters.publishCondition }}
+    displayName: "Generate Cluecumber Report"
+
+  - task: PowerShell@2
+    condition: ${{ parameters.publishCondition }}
+    displayName: "Copy Report and Trace files to Artifact Staging Directory"
+    inputs:
+      targetType: "inline"
+      script: |
+        # Copy generated report files and all child folders
+        Copy-Item -Path "target/generated-report" -Destination "$(Build.ArtifactStagingDirectory)/${{ parameters.browserName }}-${{ parameters.name }}/generated-report" -Recurse -ErrorAction SilentlyContinue
+        # Copy trace files and all child folders
+        Copy-Item -Path "target/trace" -Destination "$(Build.ArtifactStagingDirectory)/${{ parameters.browserName }}-${{ parameters.name }}/trace" -Recurse -ErrorAction SilentlyContinue
+        # Copy log files and all child folders
+        $exclusions = [string[]]@("*.lck")
+        Copy-Item -Path "target/logs" -Destination "$(Build.ArtifactStagingDirectory)/${{ parameters.browserName }}-${{ parameters.name }}/logs" -Exclude $exclusions -Recurse -ErrorAction SilentlyContinue
+        # Copy video files and all child folders
+        Copy-Item -Path "target/videos" -Destination "$(Build.ArtifactStagingDirectory)/${{ parameters.browserName }}-${{ parameters.name }}/videos" -Recurse -ErrorAction SilentlyContinue
+
+  - task: PublishBuildArtifacts@1
+    condition: ${{ parameters.publishCondition }}
+    displayName: "Publish Generated Report"
+    inputs:
+      pathtoPublish: "$(Build.ArtifactStagingDirectory)/${{ parameters.browserName }}-${{ parameters.name }}"
+      artifactName: "Cluecumber Report - ${{ parameters.browserName }}-${{ parameters.name }}"

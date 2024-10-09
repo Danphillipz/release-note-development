@@ -3,6 +3,7 @@ package playwright.managers;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.Browser.NewContextOptions;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
@@ -10,15 +11,15 @@ import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Tracing;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import devices.Device;
+import enums.Configuration;
 import exceptions.ConfigurationException;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -77,63 +78,46 @@ public class PlaywrightManager {
   }
 
   /**
+   * Retrieves the current Playwright instance for the current thread.
+   *
+   * @return The current Playwright instance.
+   */
+  public Playwright playwright() {
+    if (this.playwrightThreadLocal.get() == null) {
+      playwrightThreadLocal.set(Playwright.create());
+    }
+    return this.playwrightThreadLocal.get();
+  }
+
+  /**
    * Retrieves the current browser instance for the current thread.
    *
    * @return The current browser instance.
    */
   public Browser browser() {
+    if (!hasBrowserLaunched()) {
+      launchBrowser();
+    }
     return this.browserThreadLocal.get();
-  }
-
-  /**
-   * Checks if the current device is a mobile device.
-   *
-   * @return True if the device is mobile, false otherwise.
-   */
-  public boolean isMobile() {
-    return device != null && device.isMobile();
   }
 
   /**
    * Retrieves the current browser context for the current thread. If not yet instantiated, this
    * will first call {@link PlaywrightManager#setContextThreadLocal(BrowserContext)} with a new
-   * BrowserContext which loads state from storage.
+   * BrowserContext.
    *
    * @return The current browser context.
    */
   public BrowserContext browserContext() {
-    if (this.contextThreadLocal.get() == null) {
-      setContextThreadLocal(
-          browser()
-              .newContext(
-                  new Browser.NewContextOptions()
-                      .setStorageStatePath(Paths.get("./src/test/resources/state.json"))));
+    if (hasContextBeenSet()) {
+      return this.contextThreadLocal.get();
+    } else if (!hasBrowserLaunched()) {
+      launchBrowser();
     }
-    return this.contextThreadLocal.get();
-  }
-
-  /**
-   * Configures the browser context with user-defined configurations.
-   *
-   * @param context The context to be configured.
-   */
-  private void setContextThreadLocal(BrowserContext context) {
-    var timeout = getProperty.asInteger("timeout");
-    if (timeout != null) {
-      context.setDefaultTimeout(timeout);
+    if (isDeviceBeingEmulated()) {
+      return setContextThreadLocal(browser().newContext(getDeviceConfiguration()));
     }
-    var navigationTimeout = getProperty.asInteger("navigationTimeout");
-    if (navigationTimeout != null) {
-      context.setDefaultNavigationTimeout(navigationTimeout);
-    }
-    var assertionTimeout = getProperty.asInteger("assertionTimeout");
-    if (assertionTimeout != null) {
-      PlaywrightAssertions.setDefaultAssertionTimeout(assertionTimeout);
-    }
-    if (getProperty.asFlag("trace", false)) {
-      context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true));
-    }
-    this.contextThreadLocal.set(context);
+    return setContextThreadLocal(browser().newContext());
   }
 
   /**
@@ -143,19 +127,82 @@ public class PlaywrightManager {
    * @return The current page.
    */
   public Page page() {
-    if (this.pageThreadLocal.get() == null) {
-      this.pageThreadLocal.set(browserContext().newPage());
+    if (hasPageBeenSet()) {
+      return this.pageThreadLocal.get();
     }
+    this.pageThreadLocal.set(browserContext().newPage());
     return this.pageThreadLocal.get();
   }
 
   /**
-   * Retrieves the current Playwright instance for the current thread.
+   * Checks to see if the browser has been launched.
    *
-   * @return The current Playwright instance.
+   * @return true if browser has launched for the thread.
    */
-  public Playwright playwright() {
-    return this.playwrightThreadLocal.get();
+  public boolean hasBrowserLaunched() {
+    return Objects.nonNull(this.browserThreadLocal.get());
+  }
+
+  /**
+   * Checks to see if the browser context has been set.
+   *
+   * @return true if context has been set for the thread.
+   */
+  public boolean hasContextBeenSet() {
+    return Objects.nonNull(this.contextThreadLocal.get());
+  }
+
+  /**
+   * Checks to see if the page has been set.
+   *
+   * @return true if page has been set for the thread.
+   */
+  public boolean hasPageBeenSet() {
+    return Objects.nonNull(this.pageThreadLocal.get());
+  }
+
+  /**
+   * Checks if a device is being emulated.
+   *
+   * @return true if a device is being emulated.
+   */
+  private boolean isDeviceBeingEmulated() {
+    return Objects.nonNull(device);
+  }
+
+  /**
+   * Checks if the current device is a mobile device.
+   *
+   * @return True if the device is mobile, false otherwise.
+   */
+  public boolean isMobile() {
+    return isDeviceBeingEmulated() && device.isMobile();
+  }
+
+  /**
+   * Configures the browser context with user-defined configurations.
+   *
+   * @param context The context to be configured.
+   */
+  private BrowserContext setContextThreadLocal(BrowserContext context) {
+    var navigationTimeout = getProperty.asInteger(Configuration.NAVIGATION_TIMEOUT);
+    if (navigationTimeout != null) {
+      context.setDefaultNavigationTimeout(navigationTimeout);
+    }
+    var assertionTimeout = getProperty.asInteger(Configuration.ASSERTION_TIMEOUT);
+    if (assertionTimeout != null) {
+      PlaywrightAssertions.setDefaultAssertionTimeout(assertionTimeout);
+    }
+    var actionsTimeout = getProperty.asInteger(Configuration.ACTION_TIMEOUT);
+    if (actionsTimeout != null) {
+      context.setDefaultTimeout(actionsTimeout);
+    }
+    if (getProperty.asFlag(Configuration.TRACE_ON_FAILURE, false)
+        || getProperty.asFlag(Configuration.TRACE_ALWAYS, false)) {
+      context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true));
+    }
+    this.contextThreadLocal.set(context);
+    return context;
   }
 
   /**
@@ -163,31 +210,34 @@ public class PlaywrightManager {
    * or CLI properties.
    */
   public void launchBrowser() {
-    String browser = getProperty.asRequiredString("browser");
-    playwrightThreadLocal.set(Playwright.create());
+    String browser = getProperty.asRequiredString(Configuration.BROWSER);
     browserThreadLocal.set(
         Optional.ofNullable(getBrowser(browser)).orElseGet(() -> getCustomDevice(browser)));
-    if (device != null) {
-      configureCustomDevice();
-    }
   }
 
   /**
    * Ends the current test session.
    */
   public void endTest() {
-    page().close();
-    browserContext().close();
-    pageThreadLocal.remove();
-    contextThreadLocal.remove();
+    if (hasPageBeenSet()) {
+      pageThreadLocal.get().close();
+      pageThreadLocal.remove();
+    }
+    if (hasContextBeenSet()) {
+      contextThreadLocal.get().close();
+      contextThreadLocal.remove();
+    }
+    if (hasBrowserLaunched()) {
+      browserThreadLocal.get().close();
+      browserThreadLocal.remove();
+    }
   }
 
   /**
-   * Shuts down the browser.
+   * Shuts down playwright.
    */
   public void shutdown() {
-    browser().close();
-    browserThreadLocal.remove();
+    playwright().close();
     playwrightThreadLocal.remove();
   }
 
@@ -199,21 +249,21 @@ public class PlaywrightManager {
    * @throws ConfigurationException if an error occurs while reading the custom device descriptors
    */
   public boolean isSupportedBrowser(String browser) {
-    if (!Arrays.asList(CHROME_BROWSER_NAME, EDGE_BROWSER_NAME, CHROMIUM_BROWSER_NAME,
+    if (Arrays.asList(CHROME_BROWSER_NAME, EDGE_BROWSER_NAME, CHROMIUM_BROWSER_NAME,
             FIREFOX_BROWSER_NAME, WEBKIT_BROWSER_NAME)
         .contains(browser.toLowerCase())) {
-      try {
-        deviceInformation =
-            gson.fromJson(
-                Files.readString(Path.of("./src/main/java/devices/deviceDescriptors.json")),
-                new TypeToken<Map<String, Device>>() {
-                }.getType());
-      } catch (IOException e) {
-        throw new ConfigurationException("Unable to read the device description json", e);
-      }
-      return deviceInformation.get(browser) != null;
+      return true;
     }
-    return true;
+    try {
+      deviceInformation =
+          gson.fromJson(
+              Files.readString(Path.of("./src/main/java/devices/deviceDescriptors.json")),
+              new TypeToken<Map<String, Device>>() {
+              }.getType());
+    } catch (IOException e) {
+      throw new ConfigurationException("Unable to read the device description json", e);
+    }
+    return deviceInformation.get(browser) != null;
   }
 
   /**
@@ -223,8 +273,9 @@ public class PlaywrightManager {
    * @return The browser instance.
    */
   private Browser getBrowser(String browser) {
+    var headless = getProperty.asFlag(Configuration.HEADLESS, true);
     BrowserType.LaunchOptions options =
-        new BrowserType.LaunchOptions().setHeadless(getProperty.asFlag("headless", true));
+        new BrowserType.LaunchOptions().setHeadless(headless);
     return switch (browser.toLowerCase()) {
       case CHROMIUM_BROWSER_NAME -> playwright().chromium().launch(options);
       case FIREFOX_BROWSER_NAME -> playwright().firefox().launch(options);
@@ -247,7 +298,7 @@ public class PlaywrightManager {
    */
   private Browser getCustomDevice(String browser) {
     device = deviceInformation.get(browser);
-    return Optional.ofNullable(getBrowser(device.getDefaultBrowserType()))
+    return Optional.ofNullable(getBrowser(device.defaultBrowserType()))
         .orElseThrow(
             () -> new NoSuchElementException(String.format("%s Browser unsupported", browser)));
   }
@@ -255,25 +306,38 @@ public class PlaywrightManager {
   /**
    * Configures the custom device settings for the browser context.
    */
-  private void configureCustomDevice() {
-    Browser.NewContextOptions contextOptions =
-        new Browser.NewContextOptions()
-            .setStorageStatePath(Paths.get("./src/test/resources/state.json"));
-    setContextThreadLocal(
-        browser()
-            .newContext(
-                contextOptions
-                    .setUserAgent(device.getUserAgent())
-                    .setViewportSize(
-                        Optional.ofNullable(device.getViewport())
-                            .orElse(
-                                contextOptions.viewportSize == null //NOSONAR
-                                    ? null
-                                    : contextOptions.viewportSize.orElse(null)))
-                    .setScreenSize(
-                        Optional.ofNullable(device.getScreen()).orElse(contextOptions.screenSize))
-                    .setDeviceScaleFactor(device.getDeviceScaleFactor())
-                    .setIsMobile(device.isMobile())
-                    .setHasTouch(device.hasTouch())));
+  private NewContextOptions getDeviceConfiguration() {
+    Browser.NewContextOptions contextOptions = new Browser.NewContextOptions();
+    var userAgent = device.userAgent();
+    if (Objects.nonNull(userAgent)) {
+      contextOptions.setUserAgent(userAgent);
+    }
+    var viewport = device.viewport();
+    if (Objects.nonNull(viewport)) {
+      contextOptions.setViewportSize(viewport);
+    }
+    var screenSize = device.screen();
+    if (Objects.nonNull(screenSize)) {
+      contextOptions.setScreenSize(screenSize);
+    }
+    var isMobile = device.isMobile();
+    if (Objects.nonNull(isMobile)) {
+      contextOptions.setIsMobile(isMobile);
+    }
+    var scaleFactor = device.deviceScaleFactor();
+    if (Objects.nonNull(scaleFactor)) {
+      contextOptions.setDeviceScaleFactor(scaleFactor);
+    }
+    return contextOptions;
   }
+
+  /**
+   * Saves the browser trace to the given path.
+   *
+   * @param path Path to save the trace
+   */
+  public void saveTrace(Path path) {
+    browserContext().tracing().stop(new Tracing.StopOptions().setPath(path));
+  }
+
 }
