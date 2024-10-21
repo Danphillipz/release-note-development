@@ -276,7 +276,7 @@ stages:
   - template: release-notes/publish-release-notes.yml
     parameters:
       enable: ${{ variables['enable_release_note_generation'] }}
-      runCondition: succeeded('BuildNumber')
+      runCondition: succeeded('Test')
       dependsOnStages:
-        - BuildNumber
+        - Test
       environment: development
