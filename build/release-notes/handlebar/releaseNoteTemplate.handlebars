@@ -1,0 +1,115 @@
+<div style="width: 100%; background-color: black; color: white; text-align: center; padding: 20px; box-sizing: border-box;">Minor Version {{buildDetails.buildNumber}}</div>
+<div style="border: 1px solid black; padding: 10px;">
+- <a href=#{{buildDetails.buildNumber}}-build-scope>🔧 Build Scope</a>
+  - <a href=#{{buildDetails.buildNumber}}-user-stories>📘 Associated User Stories</a>
+  - <a href=#{{buildDetails.buildNumber}}-bugs>🔨 Associated Bugs</a>
+- <a href=#{{buildDetails.buildNumber}}-build-detail>🏗 Build Detail</a>
+  - <a href=#{{buildDetails.buildNumber}}-test-summary>🧪 Test Summary</a>
+  - <a href=#{{buildDetails.buildNumber}}-commit-log>📝 Commit Log</a>
+  - <a href=#{{buildDetails.buildNumber}}-artifacts>📁 Artifacts ({{this.publishedArtifacts.length}})</a>
+- <a href=#{{buildDetails.buildNumber}}-rollback-steps>⏪ Rollback Steps</a>
+</div>
+
+# **Version <a href="{{buildDetails._links.web.href}}" target="_blank">{{buildDetails.buildNumber}}</a>**
+
+{{#if (eq buildDetails.repository.type "GitHub")}}
+**Triggered by GitHub for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
+{{#if buildDetails.parameters}}
+{{#with (parseJSON buildDetails.parameters)}}
+**Associated PR:** <a href="{{ lookup this 'system.pullRequest.sourceRepositoryUri'}}/pull/{{lookup this 'system.pullRequest.pullRequestNumber'}}" target="_blank">{{lookup this 'system.pullRequest.pullRequestNumber'}}</a>
+{{/with}}
+{{/if}}
+{{else}}
+**Requested For:** @<{{buildDetails.requestedFor.uniqueName}}>
+{{#forEach this.pullRequests}}
+**Associated PR:** !{{this.pullRequestId}} - Created By: {{this.createdBy.displayName}}
+{{/forEach}}
+
+{{/if}}
+
+___
+
+<h2 id="{{buildDetails.buildNumber}}-build-scope">🔧 Build Scope</h2>
+
+<h3 id="{{buildDetails.buildNumber}}-user-stories">📘 Associated User Stories</h3>
+
+{{#if this.workItems.length}}
+| **Type** | **Work Item** | **Parent** |
+|----------|---------------|------------|
+{{#forEach this.workItems}}
+{{#if (isnt (lookup this.fields 'System.WorkItemType') 'Bug')}}
+| {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
+{{/if}}
+{{/forEach}}
+{{else}}
+- No user stories associated with this build.
+{{/if}}
+
+<h3 id="{{buildDetails.buildNumber}}-bugs">🔨 Associated Bugs</h3>
+
+{{#if this.workItems.length}}
+| **Type** | **Work Item** | **Parent** |
+|----------|---------------|------------|
+{{#forEach this.workItems}}
+{{#if (eq (lookup this.fields 'System.WorkItemType') 'Bug')}}
+| {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
+{{/if}}
+{{/forEach}}
+{{else}}
+- No bugs associated with this build.
+{{/if}}
+
+___
+
+<h2 id="{{buildDetails.buildNumber}}-build-detail">🏗 Build Detail</h2>
+
+<h3 id="{{buildDetails.buildNumber}}-test-summary">🧪 Test Summary</h3>
+
+{{#with (generateTestSummary this.tests) as |testResults|}}
+{{#if testResults.length}}
+| **Test Run**| **Number of tests run** | **Test pass rate** | Test Report |
+|-------------|--------------------------|--------------------|------------|
+{{#forEach testResults}}
+|{{this.name}}|{{this.totalTests}}|{{this.passRate}}|<a href="{{this.url}}" target="_blank">View Report</a>|
+{{/forEach}}
+{{else}}
+- No test results available.
+{{/if}}
+{{/with}}
+
+<h3 id="{{buildDetails.buildNumber}}-commit-log">📝 Commit Log</h3>
+
+{{#if this.commits.length}}
+{{#forEach this.commits}}
+<small><span>{{#if (eq type "GitHub")}}<a href="{{displayUri}}" target="_blank">{{truncate id 5}}</a>{{else}}<a href="{{../buildDetails.repository.url}}/commit/{{id}}" target="_blank">{{truncate id 5}}</a>{{/if}}</span> by <b>{{author.displayName}}</b> {{#if (gt changes.length 0)}}({{inflect changes.length "file" "files" true}} changed){{/if}} - "{{get_only_message_firstline message}}"</small>
+{{/forEach}}
+{{else}}
+  - No commits associated with this build.
+{{/if}}
+
+<h3 id="{{buildDetails.buildNumber}}-artifacts">📁 Artifacts ({{this.publishedArtifacts.length}})</h3>
+
+{{#if this.publishedArtifacts.length}}
+| **Name** | **Artifact Link** |
+| ---- | ---------|
+{{#forEach publishedArtifacts}}
+| {{name}} |<a href="{{resource.downloadUrl}}">Download</a>|
+{{/forEach}}
+
+<a href="{{buildDetails._links.web.href}}&view=artifacts&pathAsName=false&type=publishedArtifacts" target="_blank">Click here to view the complete artifact list</a>
+
+{{else}}
+- No artifacts have been stored for this build
+{{/if}}
+
+___
+
+<h2 id="{{buildDetails.buildNumber}}-rollback-steps">⏪ Rollback Steps</h2>
+
+It is always advisable to 'fix forward' where possible. In situation where this is not an option, re-deploy the previous version of the pipeline.
+
+| **Step #** | **Actions** |
+|---------------------------------------|----------------------------------------|
+| 1 | No rollback steps have been defined, please contact the build requester.  |
+
+___

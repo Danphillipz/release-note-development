@@ -1,0 +1,67 @@
+parameters:
+  - name: enable
+    type: boolean
+  - name: runCondition
+    type: object
+  - name: dependsOnStages
+    type: object
+  - name: environment
+    type: string
+
+stages:
+  - ${{ if eq(parameters.enable, true) }}:
+      - stage: ReleaseNotes
+        dependsOn: ${{ parameters.dependsOnStages }}
+        condition: ${{ parameters.runCondition }}
+        variables:
+          - name: core_environment
+            value: ${{ parameters.environment}}
+        jobs:
+          - job: GenerateAndPublish
+            uses:
+              repositories: [wiki] # work around for security issue for pipelines to access the WIKI repo
+            variables:
+              wiki: $[ resources.repositories.wiki.url ]
+            steps:
+              - task: XplatGenerateReleaseNotes@4
+                displayName: Generate Release Notes
+                inputs:
+                  outputfile: "$(Build.ArtifactStagingDirectory)/releasenotes.md"
+                  templateLocation: "File"
+                  templatefile: "$(System.DefaultWorkingDirectory)/build/azDevOps/azure/release-notes/handlebar/releaseNoteTemplate.handlebars"
+                  customHandlebarsExtensionFile: "custom-extensions.js"
+                  customHandlebarsExtensionFolder: "$(System.DefaultWorkingDirectory)/build/azDevOps/azure/release-notes/handlebar/extensions"
+                  checkStage: false
+                  replaceFile: false
+                  getParentsAndChildren: true
+                  getAllParents: false
+                  getIndirectPullRequests: false
+                  stopOnError: true
+                  considerPartiallySuccessfulReleases: true
+                  checkForManuallyLinkedWI: true # Picks up items manually linked rather than via commit message
+                  wiqlFromTarget: "WorkItems"
+                  dumpPayloadToFile: true
+                  dumpPayloadFileName: $(Build.ArtifactStagingDirectory)/release-notes-payload.json
+
+              - task: PublishBuildArtifacts@1
+                displayName: "Publish Release Notes Payload"
+                inputs:
+                  pathtoPublish: "$(Build.ArtifactStagingDirectory)/release-notes-payload.json"
+                  artifactName: "release-notes-payload.json"
+
+              - task: WikiUpdaterTask@3
+                displayName: Publish Release Notes to WIKI
+                inputs:
+                  repo: $(wiki)
+                  branch: "wikiMaster"
+                  filename: "Release-Notes/$(core_environment)/$(self_generic_name)/V$(version_major)/V$(version_minor).md"
+                  replaceFile: false
+                  dataIsFile: true
+                  sourceFile: "$(Build.ArtifactStagingDirectory)/releasenotes.md" # file output from previous task
+                  message: "Automatic commit from pipeline"
+                  gitname: "pipeline"
+                  gitemail: "pipeline@stacks.com"
+                  useAgentToken: true
+                  localpath: '$(System.DefaultWorkingDirectory)\repo'
+                  injectToc: true
+                  appendToFile: false

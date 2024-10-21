@@ -13,6 +13,9 @@ variables:
     value: ${{ and(eq(variables['Build.SourceBranch'], 'refs/heads/main'), or(eq(variables['Build.Reason'], 'BatchedCI'),eq(variables['Build.Reason'], 'IndividualCI'))) }}
   - name: isPullRequest
     value: ${{ eq(variables['Build.Reason'], 'PullRequest') }}
+  - name: enable_release_note_generation
+    value: true
+
 parameters:
   - name: include
     type: string
@@ -270,57 +273,10 @@ stages:
               script: |
                 echo '##vso[build.updatebuildnumber]$(version)';
 
-  - stage: ReleaseNotes
-    condition: and(succeededOrFailed(), eq(variables.isMergeBuild, 'true'))
-    dependsOn:
-      - BuildNumber
-    jobs:
-      - job: GenerateAndPublish
-        condition: succeededOrFailed()
-        uses:
-          repositories: [ wiki ]
-        steps:
-          - task: XplatGenerateReleaseNotes@4
-            displayName: Generate Release Notes
-            inputs:
-              outputfile: "$(Build.ArtifactStagingDirectory)/releasenotes.md"
-              templateLocation: "File"
-              templatefile: "$(System.DefaultWorkingDirectory)/build/handlebar/releaseNoteTemplate.handlebars"
-              customHandlebarsExtensionFile: "custom-extensions.js"
-              customHandlebarsExtensionFolder: "$(System.DefaultWorkingDirectory)/build/handlebar/extensions"
-              checkStage: true
-              replaceFile: false
-              getParentsAndChildren: false
-              getAllParents: false
-              getIndirectPullRequests: false
-              stopOnError: true
-              considerPartiallySuccessfulReleases: true
-              checkForManuallyLinkedWI: true # Picks up items manually linked rather than via commit message
-              wiqlFromTarget: "WorkItems"
-              dumpPayloadToFile: true
-              dumpPayloadFileName: $(Build.ArtifactStagingDirectory)/release-notes-payload.json
-
-          - task: PublishBuildArtifacts@1
-            displayName: "Publish Release Notes Payload"
-            inputs:
-              pathtoPublish: "$(Build.ArtifactStagingDirectory)/release-notes-payload.json"
-              artifactName: "release-notes-payload.json"
-
-          - task: WikiUpdaterTask@3
-            displayName: Publish Release Notes to WIKI
-            condition: succeededOrFailed()
-            inputs:
-              repo: "https://ensonodigitaluk@dev.azure.com/ensonodigitaluk/QA/_git/QA.wiki"
-              branch: "wikiMaster"
-              filename: "Automation-Test-Suites/Release-Notes/$(version_major).$(version_minor).md"
-              replaceFile: false # appends to the end of the existing WIKI
-              dataIsFile: true
-              sourceFile: "$(Build.ArtifactStagingDirectory)/releasenotes.md" # file output from previous task
-              message: "Automatic commit from pipeline"
-              gitname: "pipeline"
-              gitemail: "pipeline@ensono.com"
-              useAgentToken: true
-              localpath: '$(System.DefaultWorkingDirectory)\repo'
-              updateOrderFile: true
-              prependEntryToOrderFile: true
-              injecttoc: true
+  - template: release-notes/publish-release-notes.yml
+    parameters:
+      enable: ${{ variables['enable_release_note_generation'] }}
+      runCondition: succeeded('BuildNumber')
+      dependsOnStages:
+        - BuildNumber
+      environment: development
