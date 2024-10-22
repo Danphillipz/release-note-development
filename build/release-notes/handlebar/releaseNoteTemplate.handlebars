@@ -65,7 +65,7 @@ ___
 
 <h3 id="{{buildDetails.buildNumber}}-test-summary">🧪 Test Summary</h3>
 
-{{#if testResults.length}}
+{{#if this.tests.length}}
 {{#with (generateTestSummary this.tests) as |testResults|}}
 | **Test Run**| **Number of tests run** | **Test pass rate** | Test Report |
 |-------------|--------------------------|--------------------|------------|
