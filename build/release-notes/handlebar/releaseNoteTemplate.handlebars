@@ -36,25 +36,27 @@ ___
 <h3 id="{{buildDetails.buildNumber}}-user-stories">📘 Associated User Stories</h3>
 
 {{#with (splitWorkItems this.workItems) as |workItems|}}
-  {{#if workItems.otherWorkItems.length}}
-    | **Type** | **Work Item** | **Parent** |
-    |----------|---------------|------------|
-    {{#forEach workItems.otherWorkItems}}
-    | {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
-    {{/forEach}}
-    {{else}}
-    - No user stories associated with this build.
-  {{/if}}
-  <h3 id="{{buildDetails.buildNumber}}-bugs">🔨 Associated Bugs</h3>
-  {{#if workItems.bugs.length}}
-    | **Type** | **Work Item** | **Parent** |
-    |----------|---------------|------------|
-    {{#forEach workItems.bugs}}
-    | {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
-    {{/forEach}}
-    {{else}}
-    - No bugs associated with this build.
-  {{/if}}
+{{#if workItems.otherWorkItems.length}}
+| **Type** | **Work Item** | **Parent** |
+|----------|---------------|------------|
+{{#forEach workItems.otherWorkItems}}
+| {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
+{{/forEach}}
+{{else}}
+- No user stories associated with this build.
+{{/if}}
+
+<h3 id="{{buildDetails.buildNumber}}-bugs">🔨 Associated Bugs</h3>
+
+{{#if workItems.bugs.length}}
+| **Type** | **Work Item** | **Parent** |
+|----------|---------------|------------|
+{{#forEach workItems.bugs}}
+| {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
+{{/forEach}}
+{{else}}
+- No bugs associated with this build.
+{{/if}}
 {{/with}}
 
 ___
@@ -64,38 +66,40 @@ ___
 <h3 id="{{buildDetails.buildNumber}}-test-summary">🧪 Test Summary</h3>
 
 {{#if this.tests.length}}
-    {{#with (generateTestSummary this.tests) as |testResults|}}
-      | **Test Run**| **Number of tests run** | **Test pass rate** | Test Report |
-      |-------------|--------------------------|--------------------|------------|
-    {{#forEach testResults}}
-      |{{this.name}}|{{this.totalTests}}|{{this.passRate}}|<a href="{{this.url}}" target="_blank">View Report</a>|
-    {{/forEach}}
-  {{/with}}
-  {{else}}
-  - No test results available.
+{{#with (generateTestSummary this.tests) as |testResults|}}
+| **Test Run**| **Number of tests run** | **Test pass rate** | Test Report |
+|-------------|--------------------------|--------------------|------------|
+{{#forEach testResults}}
+|{{this.name}}|{{this.totalTests}}|{{this.passRate}}|<a href="{{this.url}}" target="_blank">View Report</a>|
+{{/forEach}}
+{{/with}}
+{{else}}
+- No test results available.
 {{/if}}
 
 <h3 id="{{buildDetails.buildNumber}}-commit-log">📝 Commit Log</h3>
 
 {{#if this.commits.length}}
-  {{#forEach this.commits}}
-  <small><span>{{#if (eq type "GitHub")}}<a href="{{displayUri}}" target="_blank">{{truncate id 5}}</a>{{else}}<a href="{{../buildDetails.repository.url}}/commit/{{id}}" target="_blank">{{truncate id 5}}</a>{{/if}}</span> by <b>{{author.displayName}}</b> {{#if (gt changes.length 0)}}({{inflect changes.length "file" "files" true}} changed){{/if}} - "{{get_only_message_firstline message}}"</small>
-  {{/forEach}}
-  {{else}}
-    - No commits associated with this build.
+{{#forEach this.commits}}
+<small><span>{{#if (eq type "GitHub")}}<a href="{{displayUri}}" target="_blank">{{truncate id 5}}</a>{{else}}<a href="{{../buildDetails.repository.url}}/commit/{{id}}" target="_blank">{{truncate id 5}}</a>{{/if}}</span> by <b>{{author.displayName}}</b> {{#if (gt changes.length 0)}}({{inflect changes.length "file" "files" true}} changed){{/if}} - "{{get_only_message_firstline message}}"</small>
+{{/forEach}}
+{{else}}
+  - No commits associated with this build.
 {{/if}}
 
 <h3 id="{{buildDetails.buildNumber}}-artifacts">📁 Artifacts ({{this.publishedArtifacts.length}})</h3>
 
 {{#if this.publishedArtifacts.length}}
-  | **Name** | **Artifact Link** |
-  | ---- | ---------|
-  {{#forEach publishedArtifacts}}
-  | {{name}} |<a href="{{resource.downloadUrl}}">Download</a>|
-  {{/forEach}}
-  <a href="{{buildDetails._links.web.href}}&view=artifacts&pathAsName=false&type=publishedArtifacts" target="_blank">Click here to view the complete artifact list</a>
-  {{else}}
-  - No artifacts have been stored for this build
+| **Name** | **Artifact Link** |
+| ---- | ---------|
+{{#forEach publishedArtifacts}}
+| {{name}} |<a href="{{resource.downloadUrl}}">Download</a>|
+{{/forEach}}
+
+<a href="{{buildDetails._links.web.href}}&view=artifacts&pathAsName=false&type=publishedArtifacts" target="_blank">Click here to view the complete artifact list</a>
+
+{{else}}
+- No artifacts have been stored for this build
 {{/if}}
 
 ___
