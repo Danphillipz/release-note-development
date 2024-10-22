@@ -43,7 +43,24 @@ function parseJson(json) {
   return JSON.parse(jsonString);
 }
 
+function splitWorkItems(workItems) {
+    const bugs = [];
+    const otherWorkItems = [];
+    workItems.forEach(item => {
+        if (item.fields['System.WorkItemType'] == 'Bug') {
+            bugs.push(item);
+        } else {
+            otherWorkItems.push(item);
+        }
+    });
+    return {
+        bugs,
+        otherWorkItems
+    };
+}
+
 module.exports = {
     generateTestSummary,
-    parseJson
+    parseJson,
+    splitWorkItems
 };
