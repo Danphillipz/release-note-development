@@ -13,7 +13,10 @@
 # **Version <a href="{{buildDetails._links.web.href}}" target="_blank">{{buildDetails.buildNumber}}</a>**
 
 {{#if (eq buildDetails.repository.type "GitHub")}}
-**Triggered by GitHub for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
+**Triggered by Github**
+{{#if this.buildDetails.triggerInfo}}
+**Triggered for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
+{{/if}}
 {{#if buildDetails.parameters}}
 {{#with (parseJSON buildDetails.parameters)}}
 **Associated PR:** <a href="{{ lookup this 'system.pullRequest.sourceRepositoryUri'}}/pull/{{lookup this 'system.pullRequest.pullRequestNumber'}}" target="_blank">{{lookup this 'system.pullRequest.pullRequestNumber'}}</a>
@@ -24,7 +27,6 @@
 {{#forEach this.pullRequests}}
 **Associated PR:** !{{this.pullRequestId}} - Created By: {{this.createdBy.displayName}}
 {{/forEach}}
-
 {{/if}}
 
 ___
@@ -33,13 +35,12 @@ ___
 
 <h3 id="{{buildDetails.buildNumber}}-user-stories">📘 Associated User Stories</h3>
 
-{{#if this.workItems.length}}
+{{#with (splitWorkItems this.workItems) as |workItems|}}
+{{#if workItems.otherWorkItems.length}}
 | **Type** | **Work Item** | **Parent** |
 |----------|---------------|------------|
-{{#forEach this.workItems}}
-{{#if (isnt (lookup this.fields 'System.WorkItemType') 'Bug')}}
+{{#forEach workItems.otherWorkItems}}
 | {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
-{{/if}}
 {{/forEach}}
 {{else}}
 - No user stories associated with this build.
@@ -47,17 +48,16 @@ ___
 
 <h3 id="{{buildDetails.buildNumber}}-bugs">🔨 Associated Bugs</h3>
 
-{{#if this.workItems.length}}
+{{#if workItems.bugs.length}}
 | **Type** | **Work Item** | **Parent** |
 |----------|---------------|------------|
-{{#forEach this.workItems}}
-{{#if (eq (lookup this.fields 'System.WorkItemType') 'Bug')}}
+{{#forEach workItems.bugs}}
 | {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
-{{/if}}
 {{/forEach}}
 {{else}}
 - No bugs associated with this build.
 {{/if}}
+{{/with}}
 
 ___
 
@@ -65,17 +65,17 @@ ___
 
 <h3 id="{{buildDetails.buildNumber}}-test-summary">🧪 Test Summary</h3>
 
+{{#if this.tests.length}}
 {{#with (generateTestSummary this.tests) as |testResults|}}
-{{#if testResults.length}}
 | **Test Run**| **Number of tests run** | **Test pass rate** | Test Report |
 |-------------|--------------------------|--------------------|------------|
 {{#forEach testResults}}
 |{{this.name}}|{{this.totalTests}}|{{this.passRate}}|<a href="{{this.url}}" target="_blank">View Report</a>|
 {{/forEach}}
+{{/with}}
 {{else}}
 - No test results available.
 {{/if}}
-{{/with}}
 
 <h3 id="{{buildDetails.buildNumber}}-commit-log">📝 Commit Log</h3>
 
