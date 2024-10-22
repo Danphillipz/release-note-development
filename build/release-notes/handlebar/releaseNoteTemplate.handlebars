@@ -65,9 +65,8 @@ ___
 
 <h3 id="{{buildDetails.buildNumber}}-test-summary">🧪 Test Summary</h3>
 
-{{#with (generateTestSummary this.tests) as |testResults|}}
-{{log testResults}}
 {{#if testResults.length}}
+{{#with (generateTestSummary this.tests) as |testResults|}}
 | **Test Run**| **Number of tests run** | **Test pass rate** | Test Report |
 |-------------|--------------------------|--------------------|------------|
 {{#forEach testResults}}
@@ -75,8 +74,8 @@ ___
 {{/forEach}}
 {{else}}
 - No test results available.
-{{/if}}
 {{/with}}
+{{/if}}
 
 <h3 id="{{buildDetails.buildNumber}}-commit-log">📝 Commit Log</h3>
 
