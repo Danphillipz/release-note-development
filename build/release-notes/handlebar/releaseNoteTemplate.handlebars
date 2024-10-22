@@ -13,8 +13,9 @@
 # **Version <a href="{{buildDetails._links.web.href}}" target="_blank">{{buildDetails.buildNumber}}</a>**
 
 {{#if (eq buildDetails.repository.type "GitHub")}}
+**Triggered by Github**
 {{#if this.buildDetails.triggerInfo}}
-**Triggered by GitHub for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
+**Triggered for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
 {{/if}}
 {{#if buildDetails.parameters}}
 {{#with (parseJSON buildDetails.parameters)}}
