@@ -13,7 +13,9 @@
 # **Version <a href="{{buildDetails._links.web.href}}" target="_blank">{{buildDetails.buildNumber}}</a>**
 
 {{#if (eq buildDetails.repository.type "GitHub")}}
+{{#if this.buildDetails.triggerInfo}}
 **Triggered by GitHub for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
+{{/if}}
 {{#if buildDetails.parameters}}
 {{#with (parseJSON buildDetails.parameters)}}
 **Associated PR:** <a href="{{ lookup this 'system.pullRequest.sourceRepositoryUri'}}/pull/{{lookup this 'system.pullRequest.pullRequestNumber'}}" target="_blank">{{lookup this 'system.pullRequest.pullRequestNumber'}}</a>
@@ -24,7 +26,6 @@
 {{#forEach this.pullRequests}}
 **Associated PR:** !{{this.pullRequestId}} - Created By: {{this.createdBy.displayName}}
 {{/forEach}}
-
 {{/if}}
 
 ___
