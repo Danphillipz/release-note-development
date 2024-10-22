@@ -13,7 +13,10 @@
 # **Version <a href="{{buildDetails._links.web.href}}" target="_blank">{{buildDetails.buildNumber}}</a>**
 
 {{#if (eq buildDetails.repository.type "GitHub")}}
-**Triggered by GitHub for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
+**Triggered by Github**
+{{#if this.buildDetails.triggerInfo}}
+**Triggered for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
+{{/if}}
 {{#if buildDetails.parameters}}
 {{#with (parseJSON buildDetails.parameters)}}
 **Associated PR:** <a href="{{ lookup this 'system.pullRequest.sourceRepositoryUri'}}/pull/{{lookup this 'system.pullRequest.pullRequestNumber'}}" target="_blank">{{lookup this 'system.pullRequest.pullRequestNumber'}}</a>
@@ -24,7 +27,6 @@
 {{#forEach this.pullRequests}}
 **Associated PR:** !{{this.pullRequestId}} - Created By: {{this.createdBy.displayName}}
 {{/forEach}}
-
 {{/if}}
 
 ___
@@ -33,35 +35,28 @@ ___
 
 <h3 id="{{buildDetails.buildNumber}}-user-stories">📘 Associated User Stories</h3>
 
-{{#with (splitWorkItems this.workItems)}}
-
-{{#with (this.otherWorkItems) as |workItems|}}
-{{#if workItems.length}}
+{{#with (splitWorkItems this.workItems) as |workItems|}}
+{{#if workItems.otherWorkItems.length}}
 | **Type** | **Work Item** | **Parent** |
 |----------|---------------|------------|
-{{#forEach workItems}}
+{{#forEach workItems.otherWorkItems}}
 | {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
 {{/forEach}}
 {{else}}
 - No user stories associated with this build.
 {{/if}}
-{{/with}}
 
 <h3 id="{{buildDetails.buildNumber}}-bugs">🔨 Associated Bugs</h3>
-{{#with this.bugs as |bugs|}}
 
-{{#if bugs.length}}
+{{#if workItems.bugs.length}}
 | **Type** | **Work Item** | **Parent** |
 |----------|---------------|------------|
-{{#forEach bugs}}
+{{#forEach workItems.bugs}}
 | {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
 {{/forEach}}
 {{else}}
 - No bugs associated with this build.
 {{/if}}
-
-{{/with}}
-
 {{/with}}
 
 ___
