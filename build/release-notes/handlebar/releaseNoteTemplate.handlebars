@@ -72,9 +72,9 @@ ___
 {{#forEach testResults}}
 |{{this.name}}|{{this.totalTests}}|{{this.passRate}}|<a href="{{this.url}}" target="_blank">View Report</a>|
 {{/forEach}}
+{{/with}}
 {{else}}
 - No test results available.
-{{/with}}
 {{/if}}
 
 <h3 id="{{buildDetails.buildNumber}}-commit-log">📝 Commit Log</h3>
