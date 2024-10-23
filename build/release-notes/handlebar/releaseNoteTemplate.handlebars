@@ -14,9 +14,9 @@
 
 {{#if (eq buildDetails.repository.type "GitHub")}}
 **Triggered by Github**
-{{#unless (lookup this.buildDetails.triggerInfo 'pr.sender.name') }}
+{{#if (lookup this.buildDetails.triggerInfo 'pr.sender.name') }}
 **Triggered for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
-{{/unless}}
+{{/if}}
 {{#if buildDetails.parameters}}
 {{#with (parseJSON buildDetails.parameters)}}
 **Associated PR:** <a href="{{ lookup this 'system.pullRequest.sourceRepositoryUri'}}/pull/{{lookup this 'system.pullRequest.pullRequestNumber'}}" target="_blank">{{lookup this 'system.pullRequest.pullRequestNumber'}}</a>
