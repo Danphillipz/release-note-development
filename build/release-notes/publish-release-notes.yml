@@ -31,7 +31,7 @@ stages:
                   templatefile: "$(System.DefaultWorkingDirectory)/build/release-notes/handlebar/releaseNoteTemplate.handlebars"
                   customHandlebarsExtensionFile: "custom-extensions.js"
                   customHandlebarsExtensionFolder: "$(System.DefaultWorkingDirectory)/build/release-notes/handlebar/extensions"
-                  checkStage: true
+                  checkStage: false
                   replaceFile: false
                   getParentsAndChildren: true
                   getAllParents: false
@@ -47,7 +47,7 @@ stages:
                 displayName: "Publish Release Notes Payload"
                 inputs:
                   pathtoPublish: "$(Build.ArtifactStagingDirectory)/release-notes-payload.json"
-                  artifactName: "release-notes-payload"
+                  artifactName: "Release note payload"
 
               - task: WikiUpdaterTask@3
                 displayName: Publish Release Notes to WIKI
