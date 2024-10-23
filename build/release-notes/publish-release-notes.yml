@@ -46,8 +46,8 @@ stages:
               - task: PublishBuildArtifacts@1
                 displayName: "Publish Release Notes Payload"
                 inputs:
-                  pathtoPublish: "$(Build.ArtifactStagingDirectory)/release-notes"
-                  artifactName: "release-notes-payload.json"
+                  pathtoPublish: "$(Build.ArtifactStagingDirectory)/release-notes-payload.json"
+                  artifactName: "release-notes-payload"
 
               - task: WikiUpdaterTask@3
                 displayName: Publish Release Notes to WIKI
