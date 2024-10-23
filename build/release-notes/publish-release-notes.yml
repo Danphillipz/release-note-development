@@ -31,7 +31,7 @@ stages:
                   templatefile: "$(System.DefaultWorkingDirectory)/build/release-notes/handlebar/releaseNoteTemplate.handlebars"
                   customHandlebarsExtensionFile: "custom-extensions.js"
                   customHandlebarsExtensionFolder: "$(System.DefaultWorkingDirectory)/build/release-notes/handlebar/extensions"
-                  checkStage: false
+                  checkStage: true
                   replaceFile: false
                   getParentsAndChildren: true
                   getAllParents: false
