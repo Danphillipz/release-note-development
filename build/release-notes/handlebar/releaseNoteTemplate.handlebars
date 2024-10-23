@@ -33,22 +33,22 @@ ___
 
 <h2 id="{{buildDetails.buildNumber}}-build-scope">🔧 Build Scope</h2>
 
-<h3 id="{{buildDetails.buildNumber}}-user-stories">📘 Associated User Stories</h3>
+<h3 id="{{buildDetails.buildNumber}}-user-stories">📘 Associated Work Items</h3>
 
 {{#with (splitWorkItems this.workItems) as |workItems|}}
-{{#if workItems.otherWorkItems.length}}
+{{#unless (isEmpty workItems.otherWorkItems) }}
 | **Type** | **Work Item** | **Parent** |
 |----------|---------------|------------|
 {{#forEach workItems.otherWorkItems}}
 | {{lookup this.fields 'System.WorkItemType'}} | #{{this.id}} | {{#if (lookup this.fields 'System.Parent')}}#{{lookup this.fields 'System.Parent'}}{{else}}N/A{{/if}} |
 {{/forEach}}
 {{else}}
-- No user stories associated with this build.
-{{/if}}
+- No work items associated with this build.
+{{/unless}}
 
 <h3 id="{{buildDetails.buildNumber}}-bugs">🔨 Associated Bugs</h3>
 
-{{#if workItems.bugs.length}}
+{{#unless (isEmpty workItems.bugs) }}
 | **Type** | **Work Item** | **Parent** |
 |----------|---------------|------------|
 {{#forEach workItems.bugs}}
@@ -56,7 +56,7 @@ ___
 {{/forEach}}
 {{else}}
 - No bugs associated with this build.
-{{/if}}
+{{/unless}}
 {{/with}}
 
 ___
