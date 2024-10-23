@@ -14,7 +14,7 @@
 
 {{#if (eq buildDetails.repository.type "GitHub")}}
 **Triggered by Github**
-{{#unless (isEmpty this.buildDetails.triggerInfo) }}
+{{#unless (and (isEmpty this.buildDetails.triggerInfo) (isEmpty (lookup this.buildDetails.triggerInfo 'pr.sender.name'))) }}
 **Triggered for:** {{lookup this.buildDetails.triggerInfo 'pr.sender.name'}}
 {{/unless}}
 {{#if buildDetails.parameters}}
